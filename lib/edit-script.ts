@@ -1,3 +1,5 @@
+import { ITextEditor } from "./text-editor";
+
 /**
  * The `Insert` class represents an insertion of a line.
  *
@@ -5,34 +7,24 @@
  */
 export class Insert {
   /**
-   * Creats a new `Insert` object.
-   *
-   * @param {number} row - Row index, starts from `0`.
-   * @param {string} line - A string to be inserted at the row.
-   */
-  constructor(row, line) {
-    /** @private */
-    this._row = row;
-    /** @private */
-    this._line = line;
-  }
-
-  /**
    * Row index, starts from `0`.
-   *
-   * @type {number}
    */
-  get row() {
-    return this._row;
-  }
+  public readonly row: number;
 
   /**
    * A string to be inserted.
-   *
-   * @type {string}
    */
-  get line() {
-    return this._line;
+  public readonly line: string;
+
+  /**
+   * Creats a new `Insert` object.
+   *
+   * @param row - Row index, starts from `0`.
+   * @param line - A string to be inserted at the row.
+   */
+  constructor(row: number, line: string) {
+    this.row = row;
+    this.line = line;
   }
 }
 
@@ -43,22 +35,17 @@ export class Insert {
  */
 export class Delete {
   /**
-   * Creates a new `Delete` object.
-   *
-   * @param {number} row - Row index, starts from `0`.
+   * Row index, starts from `0`.
    */
-  constructor(row) {
-    /** @private */
-    this._row = row;
-  }
+  public readonly row: number;
 
   /**
-   * Row index, starts from `0`.
+   * Creates a new `Delete` object.
    *
-   * @type {number}
+   * @param row - Row index, starts from `0`.
    */
-  get row() {
-    return this._row;
+  constructor(row: number) {
+    this.row = row;
   }
 }
 
@@ -66,19 +53,20 @@ export class Delete {
  * Applies a command to the text editor.
  *
  * @private
- * @param {ITextEditor} textEditor - An interface to the text editor.
- * @param {Insert|Delete} command - A command.
- * @param {number} rowOffset - Offset to the row index of the command.
- * @returns {undefined}
+ * @param textEditor - An interface to the text editor.
+ * @param command - A command.
+ * @param rowOffset - Offset to the row index of the command.
  */
-export function _applyCommand(textEditor, command, rowOffset) {
+export function _applyCommand(
+  textEditor: ITextEditor,
+  command: Insert | Delete,
+  rowOffset: number
+): void {
   if (command instanceof Insert) {
     textEditor.insertLine(rowOffset + command.row, command.line);
-  }
-  else if (command instanceof Delete) {
+  } else if (command instanceof Delete) {
     textEditor.deleteLine(rowOffset + command.row);
-  }
-  else {
+  } else {
     throw new Error("Unknown command");
   }
 }
@@ -87,18 +75,20 @@ export function _applyCommand(textEditor, command, rowOffset) {
  * Apply an edit script (array of commands) to the text editor.
  *
  * @private
- * @param {ITextEditor} textEditor - An interface to the text editor.
- * @param {Array<Insert|Delete>} script - An array of commands.
+ * @param textEditor - An interface to the text editor.
+ * @param script - An array of commands.
  * The commands are applied sequentially in the order of the array.
- * @param {number} rowOffset - Offset to the row index of the commands.
- * @returns {undefined}
+ * @param rowOffset - Offset to the row index of the commands.
  */
-export function applyEditScript(textEditor, script, rowOffset) {
+export function applyEditScript(
+  textEditor: ITextEditor,
+  script: Insert[] | Delete[],
+  rowOffset: number
+): void {
   for (const command of script) {
     _applyCommand(textEditor, command, rowOffset);
   }
 }
-
 
 /**
  * Linked list used to remember edit script.
@@ -118,15 +108,17 @@ class IList {
     throw new Error("Not implemented");
   }
 
-  unshift(value) {
+  unshift(value: any) {
     return new Cons(value, this);
   }
 
   toArray() {
     const arr = [];
     let rest = this;
+    // @ts-expect-error ts-migrate(1345) FIXME: An expression of type 'void' cannot be tested for ... Remove this comment to see the full error message
     while (!rest.isEmpty()) {
       arr.push(rest.car);
+      // @ts-expect-error ts-migrate(2322) FIXME: Type 'void' is not assignable to type 'this'.
       rest = rest.cdr;
     }
     return arr;
@@ -158,7 +150,10 @@ class Nil extends IList {
  * @private
  */
 class Cons extends IList {
-  constructor(car, cdr) {
+  private _car: any;
+  private _cdr: any;
+
+  constructor(car: any, cdr: any) {
     super();
     this._car = car;
     this._cdr = cdr;
@@ -179,52 +174,55 @@ class Cons extends IList {
 
 const nil = new Nil();
 
-
 /**
  * Computes the shortest edit script between two arrays of strings.
  *
  * @private
- * @param {Array<string>} from - An array of string the edit starts from.
- * @param {Array<string>} to - An array of string the edit goes to.
- * @param {number} [limit=-1] - Upper limit of edit distance to be searched.
+ * @param from - An array of string the edit starts from.
+ * @param to - An array of string the edit goes to.
+ * @param [limit=-1] - Upper limit of edit distance to be searched.
  * If negative, there is no limit.
- * @returns {Array<Insert|Delete>|undefined} The shortest edit script that turns `from` into `to`;
+ * @returns The shortest edit script that turns `from` into `to`;
  * `undefined` if no edit script is found in the given range.
  */
-export function shortestEditScript(from, to, limit = -1) {
+export function shortestEditScript(
+  from: string[],
+  to: string[],
+  limit = -1
+): Insert[] | Delete[] | undefined {
   const fromLen = from.length;
   const toLen = to.length;
   const maxd = limit >= 0 ? Math.min(limit, fromLen + toLen) : fromLen + toLen;
   const mem = new Array(Math.min(maxd, fromLen) + Math.min(maxd, toLen) + 1);
   const offset = Math.min(maxd, fromLen);
   for (let d = 0; d <= maxd; d++) {
-    const mink = d <= fromLen ? -d :  d - 2 * fromLen;
-    const maxk = d <= toLen   ?  d : -d + 2 * toLen;
+    const mink = d <= fromLen ? -d : d - 2 * fromLen;
+    const maxk = d <= toLen ? d : -d + 2 * toLen;
     for (let k = mink; k <= maxk; k += 2) {
       let i;
       let script;
       if (d === 0) {
         i = 0;
         script = nil;
-      }
-      else if (k === -d) {
+      } else if (k === -d) {
         i = mem[offset + k + 1].i + 1;
         script = mem[offset + k + 1].script.unshift(new Delete(i + k));
-      }
-      else if (k === d) {
+      } else if (k === d) {
         i = mem[offset + k - 1].i;
-        script = mem[offset + k - 1].script.unshift(new Insert(i + k - 1, to[i + k - 1]));
-      }
-      else {
+        script = mem[offset + k - 1].script.unshift(
+          new Insert(i + k - 1, to[i + k - 1])
+        );
+      } else {
         const vi = mem[offset + k + 1].i + 1;
         const hi = mem[offset + k - 1].i;
         if (vi > hi) {
           i = vi;
           script = mem[offset + k + 1].script.unshift(new Delete(i + k));
-        }
-        else {
+        } else {
           i = hi;
-          script = mem[offset + k - 1].script.unshift(new Insert(i + k - 1, to[i + k - 1]));
+          script = mem[offset + k - 1].script.unshift(
+            new Insert(i + k - 1, to[i + k - 1])
+          );
         }
       }
       while (i < fromLen && i + k < toLen && from[i] === to[i + k]) {

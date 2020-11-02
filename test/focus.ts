@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Focus } from "../lib/focus.js";
+import { Focus } from "../lib/focus";
 
 /**
  * @test {Focus}
@@ -24,11 +24,6 @@ describe("Focus", () => {
       const focus = new Focus(1, 2, 3);
       expect(focus.row).to.equal(1);
     });
-
-    it("should be read-only", () => {
-      const focus = new Focus(1, 2, 3);
-      expect(() => { focus.row = 3; }).to.throw(TypeError);
-    });
   });
 
   /**
@@ -39,11 +34,6 @@ describe("Focus", () => {
       const focus = new Focus(1, 2, 3);
       expect(focus.column).to.equal(2);
     });
-
-    it("should be read-only", () => {
-      const focus = new Focus(1, 2, 3);
-      expect(() => { focus.column = 3; }).to.throw(TypeError);
-    });
   });
 
   /**
@@ -53,11 +43,6 @@ describe("Focus", () => {
     it("should get the raw offset", () => {
       const focus = new Focus(1, 2, 3);
       expect(focus.offset).to.equal(3);
-    });
-
-    it("should be read-only", () => {
-      const focus = new Focus(1, 2, 3);
-      expect(() => { focus.offset = 3; }).to.throw(TypeError);
     });
   });
 

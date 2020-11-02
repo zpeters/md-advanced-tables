@@ -6,14 +6,13 @@
  * - `Alignment.RIGHT` - Align right.
  * - `Alignment.CENTER` - Align center.
  *
- * @type {Object}
  */
-export const Alignment = Object.freeze({
-  NONE  : "none",
-  LEFT  : "left",
-  RIGHT : "right",
-  CENTER: "center"
-});
+export enum Alignment {
+  NONE = "none",
+  LEFT = "left",
+  RIGHT = "right",
+  CENTER = "center",
+}
 
 /**
  * Represents default column alignment
@@ -22,13 +21,12 @@ export const Alignment = Object.freeze({
  * - `DefaultAlignment.RIGHT` - Align right.
  * - `DefaultAlignment.CENTER` - Align center.
  *
- * @type {Object}
  */
-export const DefaultAlignment = Object.freeze({
-  LEFT  : Alignment.LEFT,
-  RIGHT : Alignment.RIGHT,
-  CENTER: Alignment.CENTER
-});
+export enum DefaultAlignment {
+  LEFT = Alignment.LEFT,
+  RIGHT = Alignment.RIGHT,
+  CENTER = Alignment.CENTER,
+}
 
 /**
  * Represents alignment of header cells.
@@ -38,11 +36,10 @@ export const DefaultAlignment = Object.freeze({
  * - `HeaderAlignment.RIGHT` - Align right.
  * - `HeaderAlignment.CENTER` - Align center.
  *
- * @type {Object}
  */
-export const HeaderAlignment = Object.freeze({
-  FOLLOW: "follow",
-  LEFT  : Alignment.LEFT,
-  RIGHT : Alignment.RIGHT,
-  CENTER: Alignment.CENTER
-});
+export enum HeaderAlignment {
+  FOLLOW = "follow",
+  LEFT = "left",
+  RIGHT = "right",
+  CENTER = "center",
+}

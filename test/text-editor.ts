@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { Point } from "../lib/point.js";
-import { Range } from "../lib/range.js";
-import { ITextEditor } from "../lib/text-editor.js";
+import { Point } from "../lib/point";
+import { Range } from "../lib/range";
+import { ITextEditor } from "../lib/text-editor";
 
 /**
  * @test {ITextEditor}
@@ -14,7 +14,9 @@ describe("ITextEditor", () => {
   describe("#getCursorPosition()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.getCursorPosition(); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.getCursorPosition();
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -25,7 +27,9 @@ describe("ITextEditor", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
       const pos = new Point(0, 0);
-      expect(() => { textEditor.setCursorPosition(pos); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.setCursorPosition(pos);
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -35,11 +39,10 @@ describe("ITextEditor", () => {
   describe("#setSelectionRange()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      const range = new Range(
-        new Point(0, 0),
-        new Point(0, 1)
-      );
-      expect(() => { textEditor.setSelectionRange(range); }).to.throw(Error, /not implemented/i);
+      const range = new Range(new Point(0, 0), new Point(0, 1));
+      expect(() => {
+        textEditor.setSelectionRange(range);
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -49,7 +52,9 @@ describe("ITextEditor", () => {
   describe("#getLastRow()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.getLastRow(); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.getLastRow();
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -59,7 +64,9 @@ describe("ITextEditor", () => {
   describe("#acceptsTableEdit()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.acceptsTableEdit(0); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.acceptsTableEdit(0);
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -69,7 +76,9 @@ describe("ITextEditor", () => {
   describe("#getLine()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.getLine(0); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.getLine(0);
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -79,7 +88,9 @@ describe("ITextEditor", () => {
   describe("#insertLine()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.insertLine(0, "foobar"); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.insertLine(0, "foobar");
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -89,7 +100,9 @@ describe("ITextEditor", () => {
   describe("#deleteLine()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.deleteLine(0); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.deleteLine(0);
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -99,11 +112,10 @@ describe("ITextEditor", () => {
   describe("#replaceLines()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      const lines = [
-        "foo",
-        "bar"
-      ];
-      expect(() => { textEditor.replaceLines(0, 1, lines); }).to.throw(Error, /not implemented/i);
+      const lines = ["foo", "bar"];
+      expect(() => {
+        textEditor.replaceLines(0, 1, lines);
+      }).to.throw(Error, /not implemented/i);
     });
   });
 
@@ -113,7 +125,9 @@ describe("ITextEditor", () => {
   describe("#transact()", () => {
     it("should be not implemented, throw an error", () => {
       const textEditor = new ITextEditor();
-      expect(() => { textEditor.transact(() => {}); }).to.throw(Error, /not implemented/i);
+      expect(() => {
+        textEditor.transact(() => {});
+      }).to.throw(Error, /not implemented/i);
     });
   });
 });

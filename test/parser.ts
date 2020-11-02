@@ -1,8 +1,15 @@
 import { expect } from "chai";
 
-import { TableRow } from "../lib/table-row.js";
-import { Table } from "../lib/table.js";
-import { _splitCells, _readRow, marginRegexSrc, _marginRegex, readTable } from "../lib/parser.js";
+import { TableRow } from "../lib/table-row";
+import { Table } from "../lib/table";
+import {
+  _splitCells,
+  _readRow,
+  marginRegexSrc,
+  _marginRegex,
+  readTable,
+} from "../lib/parser";
+import { optionsWithDefaults } from "../lib/options";
 
 /**
  * @test {_splitCells}
@@ -10,20 +17,76 @@ import { _splitCells, _readRow, marginRegexSrc, _marginRegex, readTable } from "
 describe("_splitCells(text)", () => {
   it("should split a text into cells", () => {
     expect(_splitCells("")).to.deep.equal([""]);
-    expect(_splitCells(" | A | B | C | ")).to.deep.equal([" ", " A ", " B ", " C ", " "]);
-    expect(_splitCells(" | \\A | B | ")).to.deep.equal([" ", " \\A ", " B ", " "]);
+    expect(_splitCells(" | A | B | C | ")).to.deep.equal([
+      " ",
+      " A ",
+      " B ",
+      " C ",
+      " ",
+    ]);
+    expect(_splitCells(" | \\A | B | ")).to.deep.equal([
+      " ",
+      " \\A ",
+      " B ",
+      " ",
+    ]);
     expect(_splitCells(" | A \\| B | ")).to.deep.equal([" ", " A \\| B ", " "]);
-    expect(_splitCells(" | A | B | \\")).to.deep.equal([" ", " A ", " B ", " \\"]);
+    expect(_splitCells(" | A | B | \\")).to.deep.equal([
+      " ",
+      " A ",
+      " B ",
+      " \\",
+    ]);
     expect(_splitCells(" | A `|` B | ")).to.deep.equal([" ", " A `|` B ", " "]);
-    expect(_splitCells(" | A ``|`` B | ")).to.deep.equal([" ", " A ``|`` B ", " "]);
-    expect(_splitCells(" | A ``|` B | ")).to.deep.equal([" ", " A ``|` B ", " "]);
-    expect(_splitCells(" | A `|`` B | ")).to.deep.equal([" ", " A `", "`` B ", " "]);
-    expect(_splitCells(" | A `` `|` `` B | ")).to.deep.equal([" ", " A `` `|` `` B ", " "]);
-    expect(_splitCells(" | A ` ``|`` ` B | ")).to.deep.equal([" ", " A ` ``|`` ` B ", " "]);
-    expect(_splitCells(" | A `` ``|`` `` B | ")).to.deep.equal([" ", " A `` ``", "`` `` B ", " "]);
-    expect(_splitCells(" | `\\` | B | ")).to.deep.equal([" ", " `\\` ", " B ", " "]);
-    expect(_splitCells(" | A `\\|` B | ")).to.deep.equal([" ", " A `\\|` B ", " "]);
-    expect(_splitCells(" | A \\`|` B | ")).to.deep.equal([" ", " A \\`", "` B ", " "]);
+    expect(_splitCells(" | A ``|`` B | ")).to.deep.equal([
+      " ",
+      " A ``|`` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A ``|` B | ")).to.deep.equal([
+      " ",
+      " A ``|` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A `|`` B | ")).to.deep.equal([
+      " ",
+      " A `",
+      "`` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A `` `|` `` B | ")).to.deep.equal([
+      " ",
+      " A `` `|` `` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A ` ``|`` ` B | ")).to.deep.equal([
+      " ",
+      " A ` ``|`` ` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A `` ``|`` `` B | ")).to.deep.equal([
+      " ",
+      " A `` ``",
+      "`` `` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | `\\` | B | ")).to.deep.equal([
+      " ",
+      " `\\` ",
+      " B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A `\\|` B | ")).to.deep.equal([
+      " ",
+      " A `\\|` B ",
+      " ",
+    ]);
+    expect(_splitCells(" | A \\`|` B | ")).to.deep.equal([
+      " ",
+      " A \\`",
+      "` B ",
+      " ",
+    ]);
   });
 });
 
@@ -206,11 +269,11 @@ describe("readTable(lines, options)", () => {
         " | A | B | C |  ",
         " A | B | C ",
         " * | A | B | C |",
-        "| `\\` \\| B `|` C |"
+        "| `\\` \\| B `|` C |",
       ];
-      const options = {
-        leftMarginChars: new Set()
-      };
+      const options = optionsWithDefaults({
+        leftMarginChars: new Set(),
+      });
       const table = readTable(lines, options);
       expect(table).to.be.an.instanceOf(Table);
       const rows = table.getRows();
@@ -293,11 +356,11 @@ describe("readTable(lines, options)", () => {
         " | A | B | C |  ",
         " A | B | C ",
         " * | A | B | C |",
-        "| `\\` \\| B `|` C |"
+        "| `\\` \\| B `|` C |",
       ];
-      const options = {
-        leftMarginChars: new Set("*")
-      };
+      const options = optionsWithDefaults({
+        leftMarginChars: new Set("*"),
+      });
       const table = readTable(lines, options);
       expect(table).to.be.an.instanceOf(Table);
       const rows = table.getRows();

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Alignment } from "../lib/alignment.js";
-import { TableCell } from "../lib/table-cell.js";
+import { Alignment } from "../lib/alignment";
+import { TableCell } from "../lib/table-cell";
 
 /**
  * @test {TableCell}
@@ -35,11 +35,6 @@ describe("TableCell", () => {
         expect(cell.rawContent).to.equal("  foo  ");
       }
     });
-
-    it("should be read-only", () => {
-      const cell = new TableCell("  foo  ");
-      expect(() => { cell.rawContent = "  bar  "; }).to.throw(TypeError);
-    });
   });
 
   /**
@@ -59,11 +54,6 @@ describe("TableCell", () => {
         const cell = new TableCell("  foo  ");
         expect(cell.content).to.equal("foo");
       }
-    });
-
-    it("should be read-only", () => {
-      const cell = new TableCell("  foo  ");
-      expect(() => { cell.content = "bar"; }).to.throw(TypeError);
     });
   });
 

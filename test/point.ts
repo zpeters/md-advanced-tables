@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Point } from "../lib/point.js";
+import { Point } from "../lib/point";
 
 /**
  * @test {Point}
@@ -24,11 +24,6 @@ describe("Point", () => {
       const point = new Point(1, 2);
       expect(point.row).to.equal(1);
     });
-
-    it("should be read-only", () => {
-      const point = new Point(1, 2);
-      expect(() => { point.row = 3; }).to.throw(TypeError);
-    });
   });
 
   /**
@@ -38,11 +33,6 @@ describe("Point", () => {
     it("should get the column of the point", () => {
       const point = new Point(1, 2);
       expect(point.column).to.equal(2);
-    });
-
-    it("should be read-only", () => {
-      const point = new Point(1, 2);
-      expect(() => { point.column = 3; }).to.throw(TypeError);
     });
   });
 

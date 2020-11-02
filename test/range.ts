@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Point } from "../lib/point.js";
-import { Range } from "../lib/range.js";
+import { Point } from "../lib/point";
+import { Range } from "../lib/range";
 
 /**
  * @test {Range}
@@ -28,11 +28,6 @@ describe("Range", () => {
       expect(start.row).to.equal(1);
       expect(start.column).to.equal(2);
     });
-
-    it("should be read-only", () => {
-      const range = new Range(new Point(1, 2), new Point(3, 4));
-      expect(() => { range.start = new Point(5, 6); }).to.throw(TypeError);
-    });
   });
 
   /**
@@ -45,11 +40,6 @@ describe("Range", () => {
       expect(end).to.be.an.instanceOf(Point);
       expect(end.row).to.equal(3);
       expect(end.column).to.equal(4);
-    });
-
-    it("should be read-only", () => {
-      const range = new Range(new Point(1, 2), new Point(3, 4));
-      expect(() => { range.end = new Point(5, 6); }).to.throw(TypeError);
     });
   });
 });

@@ -1,6 +1,8 @@
-import { Point } from "./point.js";
-import { Range } from "./range.js";
-import { Focus } from "./focus.js";
+import { Point } from "./point";
+import { Range } from "./range";
+import { Focus } from "./focus";
+import { TableRow } from "./table-row";
+import { TableCell } from "./table-cell";
 
 /**
  * A `Table` object represents a table.
@@ -8,83 +10,69 @@ import { Focus } from "./focus.js";
  * @private
  */
 export class Table {
+  private _rows: TableRow[];
+
   /**
    * Creates a new `Table` object.
    *
-   * @param {Array<TableRow>} rows - An array of rows that the table contains.
+   * @param rows - An array of rows that the table contains.
    */
-  constructor(rows) {
-    /** @private */
+  constructor(rows: TableRow[]) {
     this._rows = rows.slice();
   }
 
   /**
    * Gets the number of rows in the table.
    *
-   * @returns {number} The number of rows.
+   * @returns The number of rows.
    */
-  getHeight() {
+  getHeight(): number {
     return this._rows.length;
   }
 
   /**
    * Gets the maximum width of the rows in the table.
    *
-   * @returns {number} The maximum width of the rows.
+   * @returns The maximum width of the rows.
    */
-  getWidth() {
-    return this._rows.map(row => row.getWidth())
+  getWidth(): number {
+    return this._rows
+      .map((row) => row.getWidth())
       .reduce((x, y) => Math.max(x, y), 0);
   }
 
   /**
    * Gets the width of the header row.
+   * Assumes that it is called on a valid table with a header row.
    *
-   * @returns {number|undefined} The width of the header row;
-   * `undefined` if there is no header row.
+   * @returns The width of the header row
    */
-  getHeaderWidth() {
-    if (this._rows.length === 0) {
-      return undefined;
-    }
+  getHeaderWidth(): number {
     return this._rows[0].getWidth();
   }
 
   /**
    * Gets the rows that the table contains.
    *
-   * @returns {Array<TableRow>} An array of the rows.
+   * @returns An array of the rows.
    */
-  getRows() {
+  getRows(): TableRow[] {
     return this._rows.slice();
-  }
-
-  /**
-   * Gets a row at the specified index.
-   *
-   * @param {number} index - Row index.
-   * @returns {TableRow|undefined} The row at the specified index;
-   * `undefined` if not found.
-   */
-  getRowAt(index) {
-    return this._rows[index];
   }
 
   /**
    * Gets the delimiter row of the table.
    *
-   * @returns {TableRow|undefined} The delimiter row;
-   * `undefined` if there is not delimiter row.
+   * @returns The delimiter row; `undefined` if there is not delimiter row.
    */
-  getDelimiterRow() {
+  getDelimiterRow(): TableRow | undefined {
     const row = this._rows[1];
     if (row === undefined) {
       return undefined;
     }
     if (row.isDelimiter()) {
       return row;
-    }
-    else {
+    } else {
       return undefined;
     }
   }
@@ -94,10 +82,9 @@ export class Table {
    *
    * @param {number} rowIndex - Row index of the cell.
    * @param {number} columnIndex - Column index of the cell.
-   * @returns {TableCell|undefined} The cell at the specified index;
-   * `undefined` if not found.
+   * @returns The cell at the specified index; `undefined` if not found.
    */
-  getCellAt(rowIndex, columnIndex) {
+  getCellAt(rowIndex: number, columnIndex: number): TableCell | undefined {
     const row = this._rows[rowIndex];
     if (row === undefined) {
       return undefined;
@@ -108,32 +95,31 @@ export class Table {
   /**
    * Gets the cell at the focus.
    *
-   * @param {Focus} focus - Focus object.
-   * @returns {TableCell|undefined} The cell at the focus;
-   * `undefined` if not found.
+   * @param focus - Focus object.
+   * @returns The cell at the focus; `undefined` if not found.
    */
-  getFocusedCell(focus) {
+  getFocusedCell(focus: Focus): TableCell | undefined {
     return this.getCellAt(focus.row, focus.column);
   }
 
   /**
    * Converts the table to an array of text representations of the rows.
    *
-   * @returns {Array<string>} An array of text representations of the rows.
+   * @returns An array of text representations of the rows.
    */
-  toLines() {
-    return this._rows.map(row => row.toText());
+  toLines(): string[] {
+    return this._rows.map((row) => row.toText());
   }
 
   /**
    * Computes a focus from a point in the text editor.
    *
-   * @param {Point} pos - A point in the text editor.
-   * @param {number} rowOffset - The row index where the table starts in the text editor.
-   * @returns {Focus|undefined} A focus object that corresponds to the specified point;
+   * @param pos - A point in the text editor.
+   * @param rowOffset - The row index where the table starts in the text editor.
+   * @returns A focus object that corresponds to the specified point;
    * `undefined` if the row index is out of bounds.
    */
-  focusOfPosition(pos, rowOffset) {
+  focusOfPosition(pos: Point, rowOffset: number): Focus | undefined {
     const rowIndex = pos.row - rowOffset;
     const row = this._rows[rowIndex];
     if (row === undefined) {
@@ -141,9 +127,8 @@ export class Table {
     }
     if (pos.column < row.marginLeft.length + 1) {
       return new Focus(rowIndex, -1, pos.column);
-    }
-    else {
-      const cellWidths = row.getCells().map(cell => cell.rawContent.length);
+    } else {
+      const cellWidths = row.getCells().map((cell) => cell.rawContent.length);
       let columnPos = row.marginLeft.length + 1; // left margin + a pipe
       let columnIndex = 0;
       for (; columnIndex < cellWidths.length; columnIndex++) {
@@ -160,12 +145,12 @@ export class Table {
   /**
    * Computes a position in the text editor from a focus.
    *
-   * @param {Focus} focus - A focus object.
-   * @param {number} rowOffset - The row index where the table starts in the text editor.
-   * @returns {Point|undefined} A position in the text editor that corresponds to the focus;
+   * @param focus - A focus object.
+   * @param rowOffset - The row index where the table starts in the text editor.
+   * @returns A position in the text editor that corresponds to the focus;
    * `undefined` if the focused row  is out of the table.
    */
-  positionOfFocus(focus, rowOffset) {
+  positionOfFocus(focus: Focus, rowOffset: number): Point | undefined {
     const row = this._rows[focus.row];
     if (row === undefined) {
       return undefined;
@@ -174,7 +159,7 @@ export class Table {
     if (focus.column < 0) {
       return new Point(rowPos, focus.offset);
     }
-    const cellWidths = row.getCells().map(cell => cell.rawContent.length);
+    const cellWidths = row.getCells().map((cell) => cell.rawContent.length);
     const maxIndex = Math.min(focus.column, cellWidths.length);
     let columnPos = row.marginLeft.length + 1;
     for (let columnIndex = 0; columnIndex < maxIndex; columnIndex++) {
@@ -186,12 +171,12 @@ export class Table {
   /**
    * Computes a selection range from a focus.
    *
-   * @param {Focus} focus - A focus object.
-   * @param {number} rowOffset - The row index where the table starts in the text editor.
-   * @returns {Range|undefined} A range to be selected that corresponds to the focus;
+   * @param focus - A focus object.
+   * @param rowOffset - The row index where the table starts in the text editor.
+   * @returns A range to be selected that corresponds to the focus;
    * `undefined` if the focus does not specify any cell or the specified cell is empty.
    */
-  selectionRangeOfFocus(focus, rowOffset) {
+  selectionRangeOfFocus(focus: Focus, rowOffset: number): Range | undefined {
     const row = this._rows[focus.row];
     if (row === undefined) {
       return undefined;
@@ -204,7 +189,7 @@ export class Table {
       return undefined;
     }
     const rowPos = focus.row + rowOffset;
-    const cellWidths = row.getCells().map(cell => cell.rawContent.length);
+    const cellWidths = row.getCells().map((cell) => cell.rawContent.length);
     let columnPos = row.marginLeft.length + 1;
     for (let columnIndex = 0; columnIndex < focus.column; columnIndex++) {
       columnPos += cellWidths[columnIndex] + 1;

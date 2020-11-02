@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { TableCell } from "../lib/table-cell.js";
-import { TableRow } from "../lib/table-row.js";
+import { TableCell } from "../lib/table-cell";
+import { TableRow } from "../lib/table-row";
 
 /**
  * @test {TableRow}
@@ -27,12 +27,6 @@ describe("TableRow", () => {
       const row = new TableRow(cells, " ", "  ");
       expect(row.marginLeft).to.equal(" ");
     });
-
-    it("should be read-only", () => {
-      const cells = [new TableCell("  foo  "), new TableCell("  bar  ")];
-      const row = new TableRow(cells, " ", "  ");
-      expect(() => { row.marginLeft = "   "; }).to.throw(TypeError);
-    });
   });
 
   /**
@@ -43,12 +37,6 @@ describe("TableRow", () => {
       const cells = [new TableCell("  foo  "), new TableCell("  bar  ")];
       const row = new TableRow(cells, " ", "  ");
       expect(row.marginRight).to.equal("  ");
-    });
-
-    it("should be read-only", () => {
-      const cells = [new TableCell("  foo  "), new TableCell("  bar  ")];
-      const row = new TableRow(cells, " ", "  ");
-      expect(() => { row.marginRight = "   "; }).to.throw(TypeError);
     });
   });
 
@@ -68,7 +56,10 @@ describe("TableRow", () => {
    */
   describe("#getCells()", () => {
     it("should return an array of cells that the row contains", () => {
-      const originalCells = [new TableCell("  foo  "), new TableCell("  bar  ")];
+      const originalCells = [
+        new TableCell("  foo  "),
+        new TableCell("  bar  "),
+      ];
       const row = new TableRow(originalCells, " ", "  ");
       const cells = row.getCells();
       expect(cells).to.be.an("array").of.length(2);
