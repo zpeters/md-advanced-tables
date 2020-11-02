@@ -28,14 +28,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/susisu/mte-kernel.git"
+    "url": "git+https://github.com/tgrosinger/mte-kernel.git"
   },
   "author": "Susisu <susisu2413@yahoo.co.jp> (https://github.com/susisu)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/susisu/mte-kernel/issues"
+    "url": "https://github.com/tgrosinger/mte-kernel/issues"
   },
-  "homepage": "https://github.com/susisu/mte-kernel#readme",
+  "homepage": "https://github.com/tgrosinger/mte-kernel#readme",
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",

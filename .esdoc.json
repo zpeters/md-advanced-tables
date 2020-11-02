@@ -12,8 +12,8 @@
         },
         "brand": {
           "title": "mte-kernel",
-          "site": "https://github.com/susisu/mte-kernel",
-          "repository": "https://github.com/susisu/mte-kernel.git"
+          "site": "https://github.com/tgrosinger/mte-kernel",
+          "repository": "https://github.com/tgrosinger/mte-kernel.git"
         },
         "accessor": {
           "access": ["public", "protected"],

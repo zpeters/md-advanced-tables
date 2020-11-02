@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Use this command just as you would `yarn`.
+# Examples:
+#
+#    ./npm help
+#    ./npm i                 # Install dependencies locally using package-lock.json
+#    ./npm run eslint
+#    ./npm i -E -D "eslint"  # Install the eslint package as a dev-only dep
+#    ./npm i -E "react"      # Install the react package as a dep
+
+docker run --rm \
+    -v "$(pwd)":/code \
+    -w /code \
+    --entrypoint npm \
+    node:14.5.0-slim \
+    "$@"
