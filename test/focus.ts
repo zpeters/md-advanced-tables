@@ -1,4 +1,4 @@
-import { Focus } from '../lib/focus';
+import { Focus } from '../src/focus';
 import { expect } from 'chai';
 
 /**

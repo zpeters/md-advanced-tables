@@ -4,7 +4,7 @@ import {
   Delete,
   Insert,
   shortestEditScript,
-} from '../lib/edit-script';
+} from '../src/edit-script';
 import { TextEditor } from './text-editor-mock';
 import { assert, expect } from 'chai';
 

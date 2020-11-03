@@ -1,4 +1,4 @@
-import { Alignment, DefaultAlignment, HeaderAlignment } from '../lib/alignment';
+import { Alignment, DefaultAlignment, HeaderAlignment } from '../src/alignment';
 import {
   _alignText,
   _computeTextWidth,
@@ -18,12 +18,12 @@ import {
   moveColumn,
   moveRow,
   TextWidthOptions,
-} from '../lib/formatter';
-import { Options, optionsWithDefaults } from '../lib/options';
-import { _readRow, readTable } from '../lib/parser';
-import { Table } from '../lib/table';
-import { TableCell } from '../lib/table-cell';
-import { TableRow } from '../lib/table-row';
+} from '../src/formatter';
+import { Options, optionsWithDefaults } from '../src/options';
+import { _readRow, readTable } from '../src/parser';
+import { Table } from '../src/table';
+import { TableCell } from '../src/table-cell';
+import { TableRow } from '../src/table-row';
 import { expect } from 'chai';
 
 const parserOptions: Options = optionsWithDefaults({

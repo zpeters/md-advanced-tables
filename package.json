@@ -13,18 +13,15 @@
     "org-mode"
   ],
   "files": [
-    "dist"
+    "lib/**/*"
   ],
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "lint": "eslint lib test --ext .ts --fix",
-    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/*.ts'",
+    "test": "mocha -r ts-node/register 'test/*.ts'",
     "cover": "nyc -r html -r text npm test",
-    "build": "rollup -c",
-    "doc": "esdoc",
+    "build": "tsc",
     "prepublishOnly": "run-s lint test build doc",
     "clean": "rimraf .nyc_output coverage dist doc"
   },

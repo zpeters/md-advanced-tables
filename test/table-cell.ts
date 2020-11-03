@@ -1,9 +1,5 @@
-/* eslint-disable no-unused-expressions */
-// TODO: switch to another testing library
-// https://github.com/moll/js-must#beware-of-libraries-that-assert-on-property-access
-
-import { Alignment } from '../lib/alignment';
-import { TableCell } from '../lib/table-cell';
+import { Alignment } from '../src/alignment';
+import { TableCell } from '../src/table-cell';
 import { expect } from 'chai';
 
 /**

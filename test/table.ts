@@ -1,9 +1,9 @@
-import { Focus } from '../lib/focus';
-import { Point } from '../lib/point';
-import { Range } from '../lib/range';
-import { Table } from '../lib/table';
-import { TableCell } from '../lib/table-cell';
-import { TableRow } from '../lib/table-row';
+import { Focus } from '../src/focus';
+import { Point } from '../src/point';
+import { Range } from '../src/range';
+import { Table } from '../src/table';
+import { TableCell } from '../src/table-cell';
+import { TableRow } from '../src/table-row';
 import { assert, expect } from 'chai';
 
 /**
@@ -21,7 +21,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table).to.be.an.instanceOf(Table);
@@ -39,7 +39,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.getHeight()).to.equal(3);
@@ -57,7 +57,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.getHeight()).to.equal(3);
@@ -75,7 +75,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.getWidth()).to.equal(3);
@@ -93,7 +93,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.getHeaderWidth()).to.equal(2);
@@ -119,7 +119,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ];
       const table = new Table(originalRows);
@@ -143,7 +143,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ];
       const table = new Table(rows);
@@ -161,7 +161,7 @@ describe('Table', () => {
           new TableRow(
             [new TableCell('C'), new TableCell('D'), new TableCell('E')],
             ' ',
-            '  '
+            '  ',
           ),
         ]);
         expect(table.getDelimiterRow()).to.be.undefined;
@@ -173,7 +173,7 @@ describe('Table', () => {
           new TableRow(
             [new TableCell('C'), new TableCell('D'), new TableCell('E')],
             ' ',
-            '  '
+            '  ',
           ),
         ]);
         expect(table.getDelimiterRow()).to.be.undefined;
@@ -184,7 +184,7 @@ describe('Table', () => {
           new TableRow(
             [new TableCell('C'), new TableCell('D'), new TableCell('E')],
             ' ',
-            '  '
+            '  ',
           ),
           new TableRow([new TableCell('---')], '', ''),
         ]);
@@ -223,7 +223,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.getCellAt(-1, 0)).to.be.undefined;
@@ -263,7 +263,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.getFocusedCell(new Focus(-1, 0, 1))).to.be.undefined;
@@ -289,7 +289,7 @@ describe('Table', () => {
           new TableRow(
             [new TableCell('C'), new TableCell('D'), new TableCell('E')],
             ' ',
-            '  '
+            '  ',
           ),
         ]);
         const lines = ['|A|B|', '|---|', ' |C|D|E|  '];
@@ -309,7 +309,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       {
@@ -441,7 +441,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.focusOfPosition(new Point(0, 1), 1)).to.be.undefined;
@@ -460,7 +460,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       {
@@ -562,7 +562,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.positionOfFocus(new Focus(-1, 0, 0), 1)).to.be.undefined;
@@ -581,7 +581,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('  C  '), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       {
@@ -637,7 +637,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('C'), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.selectionRangeOfFocus(new Focus(-1, 0, 0), 1)).to.be
@@ -657,7 +657,7 @@ describe('Table', () => {
         new TableRow(
           [new TableCell('    '), new TableCell('D'), new TableCell('E')],
           ' ',
-          '  '
+          '  ',
         ),
       ]);
       expect(table.selectionRangeOfFocus(new Focus(0, 0, 0), 1)).to.be

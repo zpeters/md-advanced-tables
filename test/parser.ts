@@ -1,13 +1,13 @@
-import { optionsWithDefaults } from '../lib/options';
+import { optionsWithDefaults } from '../src/options';
 import {
   _marginRegex,
   _readRow,
   _splitCells,
   marginRegexSrc,
   readTable,
-} from '../lib/parser';
-import { Table } from '../lib/table';
-import { TableRow } from '../lib/table-row';
+} from '../src/parser';
+import { Table } from '../src/table';
+import { TableRow } from '../src/table-row';
 import { expect } from 'chai';
 
 /**

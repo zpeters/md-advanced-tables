@@ -1,6 +1,6 @@
-import { Point } from '../lib/point';
-import { Range } from '../lib/range';
-import { ITextEditor } from '../lib/text-editor';
+import { Point } from '../src/point';
+import { Range } from '../src/range';
+import { ITextEditor } from '../src/text-editor';
 
 // This is a mock class of the ITextEditor interface
 export class TextEditor extends ITextEditor {

@@ -1,5 +1,5 @@
-import { Point } from '../lib/point';
-import { Range } from '../lib/range';
+import { Point } from '../src/point';
+import { Range } from '../src/range';
 import { expect } from 'chai';
 
 /**

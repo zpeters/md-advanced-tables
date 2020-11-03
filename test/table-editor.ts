@@ -1,16 +1,16 @@
-import { Alignment, DefaultAlignment } from '../lib/alignment';
-import { Focus } from '../lib/focus';
-import { completeTable, formatTable } from '../lib/formatter';
-import { defaultOptions, Options, optionsWithDefaults } from '../lib/options';
-import { readTable } from '../lib/parser';
-import { Point } from '../lib/point';
-import { Range } from '../lib/range';
-import { Table } from '../lib/table';
+import { Alignment, DefaultAlignment } from '../src/alignment';
+import { Focus } from '../src/focus';
+import { completeTable, formatTable } from '../src/formatter';
+import { defaultOptions, Options, optionsWithDefaults } from '../src/options';
+import { readTable } from '../src/parser';
+import { Point } from '../src/point';
+import { Range } from '../src/range';
+import { Table } from '../src/table';
 import {
   _computeNewOffset,
   _createIsTableRowRegex,
   TableEditor,
-} from '../lib/table-editor';
+} from '../src/table-editor';
 import { TextEditor } from './text-editor-mock';
 import { assert, expect } from 'chai';
 

@@ -1,5 +1,5 @@
-import { TableCell } from '../lib/table-cell';
-import { TableRow } from '../lib/table-row';
+import { TableCell } from '../src/table-cell';
+import { TableRow } from '../src/table-row';
 import { expect } from 'chai';
 
 /**
