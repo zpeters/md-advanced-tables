@@ -1,10 +1,12 @@
-# markdown-table-editor kernel
-The text editor independent part of [atom-markdown-table-editor][atom-mte].
+# Markdown Advanced Tables
+
+This library can be used by any text editor to enable formatting and
+Excel-style navigation to Markdown tables.
 
 **Note:** This was originally created by [@susisu](https://github.com/susisu).
-*This fork is intended to convert the project to Typescript and start adding
-*additional functionality such as table sorting, and possibly even basic
-*spreadsheet capabilities.
+This fork is intended to convert the project to Typescript and start adding
+additional functionality such as table sorting, and possibly even basic
+spreadsheet capabilities.
 
 ![demo](https://github.com/susisu/markdown-table-editor/wiki/images/demo.gif)
 
@@ -15,6 +17,7 @@ The text editor independent part of [atom-markdown-table-editor][atom-mte].
 TBD
 
 ## Usage
+
 Implement an [interface to the text editor][doc-ITextEditor].
 
 ``` javascript
@@ -51,9 +54,11 @@ It is also good to look into [atom-markdown-table-editor][atom-mte-repo] as a re
 [atom-mte-repo]: https://github.com/susisu/atom-markdown-table-editor
 
 ## License
+
 [MIT License](http://opensource.org/licenses/mit-license.php)
 
 ## Author
 
-Original author: Susisu ([GitHub](https://github.com/susisu), [Twitter](https://twitter.com/susisu2413))
 Current author: Tony Grosinger ([Github](https://github.com/tgrosinger))
+
+Original author: Susisu ([GitHub](https://github.com/susisu), [Twitter](https://twitter.com/susisu2413))

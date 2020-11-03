@@ -1,19 +1,24 @@
 {
-  "name": "@susisu/mte-kernel",
-  "version": "2.1.0",
-  "description": "The text editor independent part of markdown-table-editor",
+  "name": "@tgrosinger/md-advanced-tables",
+  "version": "3.0.0",
+  "description": "A text editor independent library for advanced manipulation and formatting to markdown tables.",
   "keywords": [
     "markdown",
     "table",
     "text",
     "editor",
     "format",
-    "formatter"
+    "formatter",
+    "spreadsheet",
+    "org-mode"
   ],
   "files": [
-    "lib",
     "dist"
   ],
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
   "scripts": {
     "lint": "eslint lib test --ext .ts --fix",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/*.ts'",
@@ -25,14 +30,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tgrosinger/mte-kernel.git"
+    "url": "git+https://github.com/tgrosinger/md-advanced-tables.git"
   },
-  "author": "Susisu <susisu2413@yahoo.co.jp> (https://github.com/susisu)",
+  "author": {
+    "name": "Tony Grosinger",
+    "email": "tony@grosinger.net",
+    "url": "https://github.com/tgrosinger"
+  },
+  "contributors": [
+    {
+      "name": "Susisu",
+      "email": "susisu2413@yahoo.co.jp",
+      "url": "https://github.com/susisu"
+    }
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tgrosinger/mte-kernel/issues"
+    "url": "https://github.com/tgrosinger/md-advanced-tables/issues"
   },
-  "homepage": "https://github.com/tgrosinger/mte-kernel#readme",
+  "homepage": "https://github.com/tgrosinger/md-advanced-tables#readme",
   "devDependencies": {
     "@rollup/plugin-typescript": "6.1.0",
     "@types/chai": "4.2.14",
