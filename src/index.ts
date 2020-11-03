@@ -25,5 +25,5 @@ export {
   shortestEditScript,
 } from './edit-script';
 export { ITextEditor } from './text-editor';
-export { Options } from './options';
+export { Options, defaultOptions, optionsWithDefaults } from './options';
 export { TableEditor } from './table-editor';
