@@ -1,163 +1,161 @@
-import { assert, expect } from "chai";
-
-import { Point } from "../lib/point";
-import { Range } from "../lib/range";
-import { Focus } from "../lib/focus";
-import { Alignment, DefaultAlignment } from "../lib/alignment";
-import { Table } from "../lib/table";
-import { readTable } from "../lib/parser";
-import { completeTable, formatTable } from "../lib/formatter";
-import { defaultOptions, Options, optionsWithDefaults } from "../lib/options";
+import { Alignment, DefaultAlignment } from '../lib/alignment';
+import { Focus } from '../lib/focus';
+import { completeTable, formatTable } from '../lib/formatter';
+import { defaultOptions, Options, optionsWithDefaults } from '../lib/options';
+import { readTable } from '../lib/parser';
+import { Point } from '../lib/point';
+import { Range } from '../lib/range';
+import { Table } from '../lib/table';
 import {
-  _createIsTableRowRegex,
   _computeNewOffset,
+  _createIsTableRowRegex,
   TableEditor,
-} from "../lib/table-editor";
-
-import { TextEditor } from "./text-editor-mock";
+} from '../lib/table-editor';
+import { TextEditor } from './text-editor-mock';
+import { assert, expect } from 'chai';
 
 /**
  * @test {_createIsTableRowRegex}
  */
-describe("_createIsTableRowRegex(leftMarginChars)", () => {
-  it("should return a regular expression object that matches a table row", () => {
+describe('_createIsTableRowRegex(leftMarginChars)', () => {
+  it('should return a regular expression object that matches a table row', () => {
     {
       const re = _createIsTableRowRegex(new Set());
-      expect(re.test("|")).to.be.true;
-      expect(re.test("|foo")).to.be.true;
-      expect(re.test(" \t|")).to.be.true;
-      expect(re.test(" \t|foo")).to.be.true;
-      expect(re.test("")).to.be.false;
-      expect(re.test("foo")).to.be.false;
-      expect(re.test(" \t")).to.be.false;
-      expect(re.test(" \tfoo")).to.be.false;
-      expect(re.test(" * |foo")).to.be.false;
+      expect(re.test('|')).to.be.true;
+      expect(re.test('|foo')).to.be.true;
+      expect(re.test(' \t|')).to.be.true;
+      expect(re.test(' \t|foo')).to.be.true;
+      expect(re.test('')).to.be.false;
+      expect(re.test('foo')).to.be.false;
+      expect(re.test(' \t')).to.be.false;
+      expect(re.test(' \tfoo')).to.be.false;
+      expect(re.test(' * |foo')).to.be.false;
     }
     {
-      const re = _createIsTableRowRegex(new Set("*"));
-      expect(re.test("|")).to.be.true;
-      expect(re.test("|foo")).to.be.true;
-      expect(re.test(" \t|")).to.be.true;
-      expect(re.test(" \t|foo")).to.be.true;
-      expect(re.test("")).to.be.false;
-      expect(re.test("foo")).to.be.false;
-      expect(re.test(" \t")).to.be.false;
-      expect(re.test(" \tfoo")).to.be.false;
-      expect(re.test(" * |foo")).to.be.true;
+      const re = _createIsTableRowRegex(new Set('*'));
+      expect(re.test('|')).to.be.true;
+      expect(re.test('|foo')).to.be.true;
+      expect(re.test(' \t|')).to.be.true;
+      expect(re.test(' \t|foo')).to.be.true;
+      expect(re.test('')).to.be.false;
+      expect(re.test('foo')).to.be.false;
+      expect(re.test(' \t')).to.be.false;
+      expect(re.test(' \tfoo')).to.be.false;
+      expect(re.test(' * |foo')).to.be.true;
     }
   });
 
-  it("should ignore a pipe, a backslash, and a backquote", () => {
-    const re = _createIsTableRowRegex(new Set("*|\\`"));
-    expect(re.test("|")).to.be.true;
-    expect(re.test("|foo")).to.be.true;
-    expect(re.test(" \t|")).to.be.true;
-    expect(re.test(" \t|foo")).to.be.true;
-    expect(re.test("")).to.be.false;
-    expect(re.test("foo")).to.be.false;
-    expect(re.test(" \t")).to.be.false;
-    expect(re.test(" \tfoo")).to.be.false;
-    expect(re.test(" * |foo")).to.be.true;
-    expect(re.test(" \\|foo")).to.be.false;
-    expect(re.test(" ` |foo")).to.be.false;
+  it('should ignore a pipe, a backslash, and a backquote', () => {
+    const re = _createIsTableRowRegex(new Set('*|\\`'));
+    expect(re.test('|')).to.be.true;
+    expect(re.test('|foo')).to.be.true;
+    expect(re.test(' \t|')).to.be.true;
+    expect(re.test(' \t|foo')).to.be.true;
+    expect(re.test('')).to.be.false;
+    expect(re.test('foo')).to.be.false;
+    expect(re.test(' \t')).to.be.false;
+    expect(re.test(' \tfoo')).to.be.false;
+    expect(re.test(' * |foo')).to.be.true;
+    expect(re.test(' \\|foo')).to.be.false;
+    expect(re.test(' ` |foo')).to.be.false;
   });
 });
 
 /**
  * @test {_computeNewOffset}
  */
-describe("_computeNewOffset(focus, completed, formatted, moved)", () => {
-  it("should compute new focus offset from the information of the completed and formatted tables", () => {
+describe('_computeNewOffset(focus, completed, formatted, moved)', () => {
+  it('should compute new focus offset from the information of the completed and formatted tables', () => {
     const table = readTable(
-      [" | A | B | ", "| --- | ---:|", "  | C | D |  "],
-      optionsWithDefaults({ leftMarginChars: new Set() })
+      [' | A | B | ', '| --- | ---:|', '  | C | D |  '],
+      optionsWithDefaults({ leftMarginChars: new Set() }),
     );
     const ops = defaultOptions;
     const completed = completeTable(table, ops);
     const formatted = formatTable(completed.table, ops);
     expect(
-      _computeNewOffset(new Focus(2, 0, 0), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 0, 0), completed.table, formatted, false),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 0, 1), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 0, 1), completed.table, formatted, false),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 0, 2), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 0, 2), completed.table, formatted, false),
     ).to.equal(2);
     expect(
-      _computeNewOffset(new Focus(2, 0, 3), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 0, 3), completed.table, formatted, false),
     ).to.equal(2);
     expect(
-      _computeNewOffset(new Focus(2, 0, 0), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 0, 0), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 0, 1), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 0, 1), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 0, 2), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 0, 2), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 0, 3), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 0, 3), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 1, 0), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 1, 0), completed.table, formatted, false),
     ).to.equal(3);
     expect(
-      _computeNewOffset(new Focus(2, 1, 1), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 1, 1), completed.table, formatted, false),
     ).to.equal(3);
     expect(
-      _computeNewOffset(new Focus(2, 1, 2), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 1, 2), completed.table, formatted, false),
     ).to.equal(4);
     expect(
-      _computeNewOffset(new Focus(2, 1, 3), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 1, 3), completed.table, formatted, false),
     ).to.equal(4);
     expect(
-      _computeNewOffset(new Focus(2, 1, 0), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 1, 0), completed.table, formatted, true),
     ).to.equal(3);
     expect(
-      _computeNewOffset(new Focus(2, 1, 1), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 1, 1), completed.table, formatted, true),
     ).to.equal(3);
     expect(
-      _computeNewOffset(new Focus(2, 1, 2), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 1, 2), completed.table, formatted, true),
     ).to.equal(3);
     expect(
-      _computeNewOffset(new Focus(2, 1, 3), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 1, 3), completed.table, formatted, true),
     ).to.equal(3);
     expect(
-      _computeNewOffset(new Focus(2, -1, 0), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, -1, 0), completed.table, formatted, false),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, -1, 1), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, -1, 1), completed.table, formatted, false),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, -1, 2), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, -1, 2), completed.table, formatted, false),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, -1, 0), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, -1, 0), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, -1, 1), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, -1, 1), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, -1, 2), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, -1, 2), completed.table, formatted, true),
     ).to.equal(1);
     expect(
-      _computeNewOffset(new Focus(2, 2, 0), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 2, 0), completed.table, formatted, false),
     ).to.equal(0);
     expect(
-      _computeNewOffset(new Focus(2, 2, 1), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 2, 1), completed.table, formatted, false),
     ).to.equal(0);
     expect(
-      _computeNewOffset(new Focus(2, 2, 2), completed.table, formatted, false)
+      _computeNewOffset(new Focus(2, 2, 2), completed.table, formatted, false),
     ).to.equal(0);
     expect(
-      _computeNewOffset(new Focus(2, 2, 0), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 2, 0), completed.table, formatted, true),
     ).to.equal(0);
     expect(
-      _computeNewOffset(new Focus(2, 2, 1), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 2, 1), completed.table, formatted, true),
     ).to.equal(0);
     expect(
-      _computeNewOffset(new Focus(2, 2, 2), completed.table, formatted, true)
+      _computeNewOffset(new Focus(2, 2, 2), completed.table, formatted, true),
     ).to.equal(0);
   });
 });
@@ -165,12 +163,12 @@ describe("_computeNewOffset(focus, completed, formatted, moved)", () => {
 /**
  * @test {TableEditor}
  */
-describe("TableEditor", () => {
+describe('TableEditor', () => {
   /**
    * @test {TableEditor.constructor}
    */
-  describe("constructor(textEditor)", () => {
-    it("should create a new TableEditor object", () => {
+  describe('constructor(textEditor)', () => {
+    it('should create a new TableEditor object', () => {
       const tableEditor = new TableEditor(new TextEditor([]));
       expect(tableEditor).to.be.an.instanceOf(TableEditor);
     });
@@ -179,8 +177,8 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#resetSmartCursor}
    */
-  describe("#resetSmartCursor()", () => {
-    it("should reset the smart cursor flag", () => {
+  describe('#resetSmartCursor()', () => {
+    it('should reset the smart cursor flag', () => {
       const tableEditor = new TableEditor(new TextEditor([]));
       // @ts-expect-error ts-migrate(2339) FIXME: Property '_scActive' does not exist on type 'Table... Remove this comment to see the full error message
       tableEditor._scActive = true;
@@ -195,22 +193,20 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#cursorIsInTable}
    */
-  describe("#cursorIsInTable(options)", () => {
-    it("should return true if the cursor of the text editor is in a table", () => {
+  describe('#cursorIsInTable(options)', () => {
+    it('should return true if the cursor of the text editor is in a table', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| ?   | ?   |", // not included in table for some reason
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
-          "| ?   | ?   |", // not included in table for some reason
-          "bar",
+          'foo',
+          '| ?   | ?   |', // not included in table for some reason
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
+          '| ?   | ?   |', // not included in table for some reason
+          'bar',
         ]);
-        textEditor.acceptsTableEdit = function (row) {
-          return row !== 1 && row !== 6;
-        };
+        textEditor.acceptsTableEdit = (row) => row !== 1 && row !== 6;
         const ops = defaultOptions;
         const tableEditor = new TableEditor(textEditor);
         textEditor.setCursorPosition(new Point(0, 0));
@@ -248,20 +244,18 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| ?   | ?   |", // not included in table for some reason
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
-          "| ?   | ?   |", // not included in table for some reason
-          "bar",
+          'foo',
+          '| ?   | ?   |', // not included in table for some reason
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
+          '| ?   | ?   |', // not included in table for some reason
+          'bar',
         ]);
-        textEditor.acceptsTableEdit = function (row) {
-          return row !== 1 && row !== 6;
-        };
+        textEditor.acceptsTableEdit = (row) => row !== 1 && row !== 6;
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         const tableEditor = new TableEditor(textEditor);
         textEditor.setCursorPosition(new Point(0, 0));
@@ -303,21 +297,19 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#_findTable}
    */
-  describe("#_findTable(options)", () => {
-    it("should find a table under the current cursor position and return an object that describes the table", () => {
+  describe('#_findTable(options)', () => {
+    it('should find a table under the current cursor position and return an object that describes the table', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| ?   | ?   |", // not included in table for some reason
-        "| A   | B   |",
-        "| --- | --- |",
-        "| C   | D   |",
-        " * | E   | F   |",
-        "| ?   | ?   |", // not included in table for some reason
-        "bar",
+        'foo',
+        '| ?   | ?   |', // not included in table for some reason
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        ' * | E   | F   |',
+        '| ?   | ?   |', // not included in table for some reason
+        'bar',
       ]);
-      textEditor.acceptsTableEdit = function (row) {
-        return row !== 1 && row !== 6;
-      };
+      textEditor.acceptsTableEdit = (row) => row !== 1 && row !== 6;
       const tableEditor = new TableEditor(textEditor);
       textEditor.setCursorPosition(new Point(2, 0));
       {
@@ -326,22 +318,22 @@ describe("TableEditor", () => {
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(4);
         expect(info.range.end.column).to.equal(13);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(0);
@@ -355,22 +347,22 @@ describe("TableEditor", () => {
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(4);
         expect(info.range.end.column).to.equal(13);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(0);
@@ -384,22 +376,22 @@ describe("TableEditor", () => {
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(4);
         expect(info.range.end.column).to.equal(13);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(0);
@@ -413,22 +405,22 @@ describe("TableEditor", () => {
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(4);
         expect(info.range.end.column).to.equal(13);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(0);
@@ -442,22 +434,22 @@ describe("TableEditor", () => {
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(4);
         expect(info.range.end.column).to.equal(13);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(1);
@@ -471,22 +463,22 @@ describe("TableEditor", () => {
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(4);
         expect(info.range.end.column).to.equal(13);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(2);
@@ -496,30 +488,30 @@ describe("TableEditor", () => {
       textEditor.setCursorPosition(new Point(2, 0));
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         const info = tableEditor._findTable(ops);
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(5);
         expect(info.range.end.column).to.equal(16);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(0);
@@ -529,30 +521,30 @@ describe("TableEditor", () => {
       textEditor.setCursorPosition(new Point(5, 0));
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         const info = tableEditor._findTable(ops);
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(5);
         expect(info.range.end.column).to.equal(16);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(3);
@@ -562,30 +554,30 @@ describe("TableEditor", () => {
       textEditor.setCursorPosition(new Point(5, 5));
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         const info = tableEditor._findTable(ops);
         if (info === undefined) {
           assert.fail();
         }
-        expect(info).to.be.an("object");
+        expect(info).to.be.an('object');
         expect(info.range).to.be.an.instanceOf(Range);
         expect(info.range.start.row).to.equal(2);
         expect(info.range.start.column).to.equal(0);
         expect(info.range.end.row).to.equal(5);
         expect(info.range.end.column).to.equal(16);
         expect(info.lines).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
         ]);
         expect(info.table).to.be.an.instanceOf(Table);
         expect(info.table.toLines()).to.deep.equal([
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          " * | E   | F   |",
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          ' * | E   | F   |',
         ]);
         expect(info.focus).to.be.an.instanceOf(Focus);
         expect(info.focus.row).to.equal(3);
@@ -594,20 +586,18 @@ describe("TableEditor", () => {
       }
     });
 
-    it("should return undefined if there is no table at the cursor position", () => {
+    it('should return undefined if there is no table at the cursor position', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| ?   | ?   |", // not included in table for some reason
-        "| A   | B   |",
-        "| --- | --- |",
-        "| C   | D   |",
-        " * | E   | F   |",
-        "| ?   | ?   |", // not included in table for some reason
-        "bar",
+        'foo',
+        '| ?   | ?   |', // not included in table for some reason
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        ' * | E   | F   |',
+        '| ?   | ?   |', // not included in table for some reason
+        'bar',
       ]);
-      textEditor.acceptsTableEdit = function (row) {
-        return row !== 1 && row !== 6;
-      };
+      textEditor.acceptsTableEdit = (row) => row !== 1 && row !== 6;
       const tableEditor = new TableEditor(textEditor);
       {
         const ops = defaultOptions;
@@ -634,7 +624,7 @@ describe("TableEditor", () => {
       }
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         textEditor.setCursorPosition(new Point(0, 0));
         expect(tableEditor._findTable(ops)).to.be.undefined;
@@ -659,37 +649,37 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#_withTable}
    */
-  describe("#_withTable(options, func)", () => {
-    it("should call the function with table information obtained by _findTable() method", () => {
+  describe('#_withTable(options, func)', () => {
+    it('should call the function with table information obtained by _findTable() method', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A   | B   |",
-        "| --- | --- |",
-        "| C   | D   |",
-        " * | E   | F   |",
-        "bar",
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        ' * | E   | F   |',
+        'bar',
       ]);
       const tableEditor = new TableEditor(textEditor);
       textEditor.setCursorPosition(new Point(1, 2));
       {
         const ops = defaultOptions;
         tableEditor._withTable(ops, (info) => {
-          expect(info).to.be.an("object");
+          expect(info).to.be.an('object');
           expect(info.range).to.be.an.instanceOf(Range);
           expect(info.range.start.row).to.equal(1);
           expect(info.range.start.column).to.equal(0);
           expect(info.range.end.row).to.equal(3);
           expect(info.range.end.column).to.equal(13);
           expect(info.lines).to.deep.equal([
-            "| A   | B   |",
-            "| --- | --- |",
-            "| C   | D   |",
+            '| A   | B   |',
+            '| --- | --- |',
+            '| C   | D   |',
           ]);
           expect(info.table).to.be.an.instanceOf(Table);
           expect(info.table.toLines()).to.deep.equal([
-            "| A   | B   |",
-            "| --- | --- |",
-            "| C   | D   |",
+            '| A   | B   |',
+            '| --- | --- |',
+            '| C   | D   |',
           ]);
           expect(info.focus).to.be.an.instanceOf(Focus);
           expect(info.focus.row).to.equal(0);
@@ -699,27 +689,27 @@ describe("TableEditor", () => {
       }
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         tableEditor._withTable(ops, (info) => {
-          expect(info).to.be.an("object");
+          expect(info).to.be.an('object');
           expect(info.range).to.be.an.instanceOf(Range);
           expect(info.range.start.row).to.equal(1);
           expect(info.range.start.column).to.equal(0);
           expect(info.range.end.row).to.equal(4);
           expect(info.range.end.column).to.equal(16);
           expect(info.lines).to.deep.equal([
-            "| A   | B   |",
-            "| --- | --- |",
-            "| C   | D   |",
-            " * | E   | F   |",
+            '| A   | B   |',
+            '| --- | --- |',
+            '| C   | D   |',
+            ' * | E   | F   |',
           ]);
           expect(info.table).to.be.an.instanceOf(Table);
           expect(info.table.toLines()).to.deep.equal([
-            "| A   | B   |",
-            "| --- | --- |",
-            "| C   | D   |",
-            " * | E   | F   |",
+            '| A   | B   |',
+            '| --- | --- |',
+            '| C   | D   |',
+            ' * | E   | F   |',
           ]);
           expect(info.focus).to.be.an.instanceOf(Focus);
           expect(info.focus.row).to.equal(0);
@@ -729,14 +719,14 @@ describe("TableEditor", () => {
       }
     });
 
-    it("should not call the function if no table is found", () => {
+    it('should not call the function if no table is found', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A   | B   |",
-        "| --- | --- |",
-        "| C   | D   |",
-        "* | E   | F   |",
-        "bar",
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        '* | E   | F   |',
+        'bar',
       ]);
       const tableEditor = new TableEditor(textEditor);
       {
@@ -768,7 +758,7 @@ describe("TableEditor", () => {
       }
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         textEditor.setCursorPosition(new Point(0, 0));
         let called = false;
@@ -779,7 +769,7 @@ describe("TableEditor", () => {
       }
       {
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         textEditor.setCursorPosition(new Point(5, 0));
         let called = false;
@@ -794,65 +784,65 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#_updateLines}
    */
-  describe("#_updateLines(startRow, endRow, newLines, oldLines = undefined)", () => {
-    it("should update lines in the specified range", () => {
+  describe('#_updateLines(startRow, endRow, newLines, oldLines = undefined)', () => {
+    it('should update lines in the specified range', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         const tableEditor = new TableEditor(textEditor);
-        const newLines = ["| E   | F   |", "| --- | --- |", "| G   | H   |"];
+        const newLines = ['| E   | F   |', '| --- | --- |', '| G   | H   |'];
         tableEditor._updateLines(1, 4, newLines);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "bar",
+          'foo',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         const tableEditor = new TableEditor(textEditor);
-        const oldLines = ["| A   | B   |", "| --- | --- |", "| C   | D   |"];
-        const newLines = ["| A   | B   |", "| --- | --- |", "| G   | H   |"];
+        const oldLines = ['| A   | B   |', '| --- | --- |', '| C   | D   |'];
+        const newLines = ['| A   | B   |', '| --- | --- |', '| G   | H   |'];
         tableEditor._updateLines(1, 4, newLines, oldLines);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         const tableEditor = new TableEditor(textEditor);
-        const oldLines = ["| A   | B   |", "| --- | --- |", "| C   | D   |"];
-        const newLines = ["| E   | F   |", "| --- | --- |", "| G   | H   |"];
+        const oldLines = ['| A   | B   |', '| --- | --- |', '| C   | D   |'];
+        const newLines = ['| E   | F   |', '| --- | --- |', '| G   | H   |'];
         tableEditor._updateLines(1, 4, newLines, oldLines);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "bar",
+          'foo',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'bar',
         ]);
       }
     });
@@ -861,14 +851,14 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#_moveToFocus}
    */
-  describe("#_moveToFocus(startRow, table, focus)", () => {
-    it("should move the cursor position to the focused cell", () => {
+  describe('#_moveToFocus(startRow, table, focus)', () => {
+    it('should move the cursor position to the focused cell', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A   | B   |",
-        "| --- | --- |",
-        "| C   | D   |",
-        "bar",
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        'bar',
       ]);
       textEditor.setCursorPosition(new Point(1, 0));
       const tableEditor = new TableEditor(textEditor);
@@ -907,13 +897,13 @@ describe("TableEditor", () => {
       }
     });
 
-    it("should do nothing if the focused row is out of the table", () => {
+    it('should do nothing if the focused row is out of the table', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A   | B   |",
-        "| --- | --- |",
-        "| C   | D   |",
-        "bar",
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        'bar',
       ]);
       textEditor.setCursorPosition(new Point(1, 0));
       const tableEditor = new TableEditor(textEditor);
@@ -942,14 +932,14 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#_selectFocus}
    */
-  describe("#_selectFocus(startRow, table, focus)", () => {
-    it("should select the focued cell in the text editor if the cell is not empty", () => {
+  describe('#_selectFocus(startRow, table, focus)', () => {
+    it('should select the focued cell in the text editor if the cell is not empty', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A    | B   |",
-        "| ---- | --- |",
-        "| test |     |",
-        "bar",
+        'foo',
+        '| A    | B   |',
+        '| ---- | --- |',
+        '| test |     |',
+        'bar',
       ]);
       textEditor.setCursorPosition(new Point(1, 0));
       const tableEditor = new TableEditor(textEditor);
@@ -1008,13 +998,13 @@ describe("TableEditor", () => {
       }
     });
 
-    it("should move the cursor position if the cell is empty", () => {
+    it('should move the cursor position if the cell is empty', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A    | B   |",
-        "| ---- | --- |",
-        "| test |     |",
-        "bar",
+        'foo',
+        '| A    | B   |',
+        '| ---- | --- |',
+        '| test |     |',
+        'bar',
       ]);
       textEditor.setCursorPosition(new Point(1, 0));
       const tableEditor = new TableEditor(textEditor);
@@ -1049,13 +1039,13 @@ describe("TableEditor", () => {
       }
     });
 
-    it("should do nothing if the focused row is out of the table", () => {
+    it('should do nothing if the focused row is out of the table', () => {
       const textEditor = new TextEditor([
-        "foo",
-        "| A    | B   |",
-        "| ---- | --- |",
-        "| test |     |",
-        "bar",
+        'foo',
+        '| A    | B   |',
+        '| ---- | --- |',
+        '| test |     |',
+        'bar',
       ]);
       textEditor.setCursorPosition(new Point(1, 0));
       const tableEditor = new TableEditor(textEditor);
@@ -1086,15 +1076,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#format}
    */
-  describe("format(options)", () => {
-    it("should format the table under the cursor", () => {
+  describe('format(options)', () => {
+    it('should format the table under the cursor', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -1104,20 +1094,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1131,20 +1121,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(4);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|   A   |   B   |",
-          "| ----- | ----- |",
-          "|   C   |   D   |",
-          "bar",
+          'foo',
+          '|   A   |   B   |',
+          '| ----- | ----- |',
+          '|   C   |   D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 1));
         const tableEditor = new TableEditor(textEditor);
@@ -1154,20 +1144,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -1177,20 +1167,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -1200,20 +1190,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -1223,20 +1213,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(3);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -1246,20 +1236,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(3);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 7));
         const tableEditor = new TableEditor(textEditor);
@@ -1269,20 +1259,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -1292,20 +1282,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 8));
         const tableEditor = new TableEditor(textEditor);
@@ -1315,19 +1305,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(5);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -1337,11 +1327,11 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   |     |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   |     |',
+          'bar',
         ]);
       }
     });
@@ -1350,15 +1340,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#escape}
    */
-  describe("#escape(options)", () => {
-    it("should format and escape from the table", () => {
+  describe('#escape(options)', () => {
+    it('should format and escape from the table', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1368,19 +1358,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1390,25 +1380,25 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          " * foo",
-          " * | A | B |",
-          " *  | ----- | --- |",
-          " *   | C | D |",
-          " *   bar",
+          ' * foo',
+          ' * | A | B |',
+          ' *  | ----- | --- |',
+          ' *   | C | D |',
+          ' *   bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 5));
         const tableEditor = new TableEditor(textEditor);
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         tableEditor.escape(ops);
         const pos = textEditor.getCursorPosition();
@@ -1416,19 +1406,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(5);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          " * foo",
-          " * | A   | B   |",
-          " * | --- | --- |",
-          " * | C   | D   |",
-          " *   bar",
+          ' * foo',
+          ' * | A   | B   |',
+          ' * | --- | --- |',
+          ' * | C   | D   |',
+          ' *   bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1438,15 +1428,15 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
-        const textEditor = new TextEditor(["foo", "| A | B |", "  | C | D |"]);
+        const textEditor = new TextEditor(['foo', '| A | B |', '  | C | D |']);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
         tableEditor.escape(defaultOptions);
@@ -1455,24 +1445,24 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          " * foo",
-          " * | A | B |",
-          " *   | C | D |",
-          " *   bar",
+          ' * foo',
+          ' * | A | B |',
+          ' *   | C | D |',
+          ' *   bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         tableEditor.escape(ops);
         const pos = textEditor.getCursorPosition();
@@ -1480,11 +1470,11 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(5);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          " * foo",
-          " * | A   | B   |",
-          " * | --- | --- |",
-          " * | C   | D   |",
-          " *   bar",
+          ' * foo',
+          ' * | A   | B   |',
+          ' * | --- | --- |',
+          ' * | C   | D   |',
+          ' *   bar',
         ]);
       }
     });
@@ -1493,15 +1483,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#alignColumn}
    */
-  describe("#alignColumn(alignment, options)", () => {
-    it("should alter alignment of a column", () => {
+  describe('#alignColumn(alignment, options)', () => {
+    it('should alter alignment of a column', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1511,19 +1501,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(4);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|   A | B   |",
-          "| ---:| --- |",
-          "|   C | D   |",
-          "bar",
+          'foo',
+          '|   A | B   |',
+          '| ---:| --- |',
+          '|   C | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -1533,20 +1523,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(4);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|   A | B   |",
-          "| ---:| --- |",
-          "|   C | D   |",
-          "bar",
+          'foo',
+          '|   A | B   |',
+          '| ---:| --- |',
+          '|   C | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -1556,20 +1546,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -1579,11 +1569,11 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -1592,15 +1582,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#selectCell}
    */
-  describe("#selectCell(options)", () => {
-    it("should select the focused cell content", () => {
+  describe('#selectCell(options)', () => {
+    it('should select the focused cell content', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1614,20 +1604,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 7));
         const tableEditor = new TableEditor(textEditor);
@@ -1637,20 +1627,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   |     |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   |     |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -1660,20 +1650,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -1683,19 +1673,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -1709,20 +1699,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -1736,11 +1726,11 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(2);
         expect(range.end.column).to.equal(5);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -1749,15 +1739,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#moveFocus}
    */
-  describe("#moveFocus(rowOffset, columnOffset, options)", () => {
-    it("should move focus by the offsets", () => {
+  describe('#moveFocus(rowOffset, columnOffset, options)', () => {
+    it('should move focus by the offsets', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1767,20 +1757,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1790,20 +1780,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1817,19 +1807,19 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1839,19 +1829,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1861,20 +1851,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -1888,20 +1878,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -1915,20 +1905,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -1938,20 +1928,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -1965,20 +1955,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -1988,21 +1978,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -2016,22 +2006,22 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(4);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -2045,21 +2035,21 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -2073,20 +2063,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -2100,20 +2090,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -2127,20 +2117,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(2);
         expect(range.end.column).to.equal(5);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -2154,19 +2144,19 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(2);
         expect(range.end.column).to.equal(11);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2180,19 +2170,19 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -2206,19 +2196,19 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -2228,20 +2218,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -2251,20 +2241,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -2274,20 +2264,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -2301,20 +2291,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -2324,20 +2314,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -2351,20 +2341,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -2374,11 +2364,11 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -2387,15 +2377,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#nextCell}
    */
-  describe("#nextCell(options)", () => {
-    it("should move the focus to the next cell", () => {
+  describe('#nextCell(options)', () => {
+    it('should move the focus to the next cell', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -2409,20 +2399,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2436,20 +2426,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -2459,20 +2449,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(14);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   | ",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   | ',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -2482,20 +2472,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(20);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |     | ",
-          "| --- | --- | --- |",
-          "| C   | D   |     |",
-          "bar",
+          'foo',
+          '| A   | B   |     | ',
+          '| --- | --- | --- |',
+          '| C   | D   |     |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -2509,20 +2499,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -2536,20 +2526,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 16));
         const tableEditor = new TableEditor(textEditor);
@@ -2563,19 +2553,19 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -2585,19 +2575,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -2611,23 +2601,23 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
 
-    it("should treat smart cursor correctly", () => {
+    it('should treat smart cursor correctly', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2673,11 +2663,11 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -2704,10 +2694,10 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2734,11 +2724,11 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 8));
         const tableEditor = new TableEditor(textEditor);
@@ -2765,11 +2755,11 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2816,15 +2806,15 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2871,11 +2861,11 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -2890,20 +2880,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 16));
         const tableEditor = new TableEditor(textEditor);
@@ -2918,11 +2908,11 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -2931,15 +2921,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#previousCell}
    */
-  describe("#previousCell(options)", () => {
-    it("should move the focus to the previous cell", () => {
+  describe('#previousCell(options)', () => {
+    it('should move the focus to the previous cell', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -2949,20 +2939,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -2972,20 +2962,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -2999,20 +2989,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -3026,20 +3016,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -3053,20 +3043,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -3080,20 +3070,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 8));
         const tableEditor = new TableEditor(textEditor);
@@ -3107,20 +3097,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -3134,21 +3124,21 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -3162,20 +3152,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -3189,11 +3179,11 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -3202,15 +3192,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#nextRow}
    */
-  describe("#nextRow(options)", () => {
-    it("should move the focus to the next row", () => {
+  describe('#nextRow(options)', () => {
+    it('should move the focus to the next row', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -3224,20 +3214,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3251,20 +3241,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -3278,20 +3268,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -3305,20 +3295,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -3332,20 +3322,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 11));
         const tableEditor = new TableEditor(textEditor);
@@ -3359,21 +3349,21 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -3387,22 +3377,22 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(4);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 8));
         const tableEditor = new TableEditor(textEditor);
@@ -3416,21 +3406,21 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(4);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -3444,20 +3434,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(4);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3467,15 +3457,15 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          'bar',
         ]);
       }
       {
-        const textEditor = new TextEditor(["foo", "| A | B |", "bar"]);
+        const textEditor = new TextEditor(['foo', '| A | B |', 'bar']);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
         tableEditor.nextRow(defaultOptions);
@@ -3484,24 +3474,24 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          'bar',
         ]);
       }
     });
 
-    it("should treat smart cursor correctly", () => {
+    it('should treat smart cursor correctly', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3547,12 +3537,12 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 8));
         const tableEditor = new TableEditor(textEditor);
@@ -3598,12 +3588,12 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -3630,10 +3620,10 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3660,11 +3650,11 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 8));
         const tableEditor = new TableEditor(textEditor);
@@ -3691,11 +3681,11 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3742,17 +3732,17 @@ describe("TableEditor", () => {
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3800,11 +3790,11 @@ describe("TableEditor", () => {
 
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -3819,20 +3809,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B | C |",
-          " | ----- | --- | --- |",
-          "  | D | E | F |",
-          "bar",
+          'foo',
+          '| A | B | C |',
+          ' | ----- | --- | --- |',
+          '  | D | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -3848,11 +3838,11 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(9);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   | C   |",
-          "| --- | --- | --- |",
-          "| D   | E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   | C   |',
+          '| --- | --- | --- |',
+          '| D   | E   | F   |',
+          'bar',
         ]);
       }
     });
@@ -3861,15 +3851,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#insertRow}
    */
-  describe("#insertRow(options)", () => {
-    it("should insert an empty row at the focus", () => {
+  describe('#insertRow(options)', () => {
+    it('should insert an empty row at the focus', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -3879,21 +3869,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -3903,21 +3893,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -3927,21 +3917,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -3951,22 +3941,22 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -3976,21 +3966,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "|     |     |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '|     |     |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4000,12 +3990,12 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "|     |     |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '|     |     |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -4014,15 +4004,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#deleteRow}
    */
-  describe("#deleteRow(options)", () => {
-    it("should delete a row at the focus", () => {
+  describe('#deleteRow(options)', () => {
+    it('should delete a row at the focus', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -4032,20 +4022,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     |     |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '|     |     |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4055,20 +4045,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     |     |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '|     |     |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -4078,20 +4068,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     |     |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '|     |     |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -4101,20 +4091,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     |     |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '|     |     |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -4124,20 +4114,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4151,20 +4141,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4178,21 +4168,21 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -4206,20 +4196,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4233,11 +4223,11 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
     });
@@ -4246,15 +4236,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#moveRow}
    */
-  describe("#moveRow(offset, options)", () => {
-    it("should move the focused row by the specified offset", () => {
+  describe('#moveRow(offset, options)', () => {
+    it('should move the focused row by the specified offset', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4264,20 +4254,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4287,20 +4277,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -4310,20 +4300,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -4333,21 +4323,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4357,22 +4347,22 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4382,22 +4372,22 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| E   | F   |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -4407,22 +4397,22 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| E   | F   |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
         const tableEditor = new TableEditor(textEditor);
@@ -4432,21 +4422,21 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| E   | F   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "   | E | F |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          '   | E | F |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4456,12 +4446,12 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| E   | F   |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -4470,15 +4460,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#insertColumn}
    */
-  describe("#insertColumn(options)", () => {
-    it("should insert an empty column at the focus", () => {
+  describe('#insertColumn(options)', () => {
+    it('should insert an empty column at the focus', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -4488,20 +4478,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     | A   | B   |",
-          "| --- | --- | --- |",
-          "|     | C   | D   |",
-          "bar",
+          'foo',
+          '|     | A   | B   |',
+          '| --- | --- | --- |',
+          '|     | C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4511,20 +4501,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     | A   | B   |",
-          "| --- | --- | --- |",
-          "|     | C   | D   |",
-          "bar",
+          'foo',
+          '|     | A   | B   |',
+          '| --- | --- | --- |',
+          '|     | C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -4534,20 +4524,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   |     | B   |",
-          "| --- | --- | --- |",
-          "| C   |     | D   |",
-          "bar",
+          'foo',
+          '| A   |     | B   |',
+          '| --- | --- | --- |',
+          '| C   |     | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -4557,20 +4547,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(14);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |     |",
-          "| --- | --- | --- |",
-          "| C   | D   |     |",
-          "bar",
+          'foo',
+          '| A   | B   |     |',
+          '| --- | --- | --- |',
+          '| C   | D   |     |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -4580,20 +4570,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     | A   | B   |",
-          "| --- | --- | --- |",
-          "|     | C   | D   |",
-          "bar",
+          'foo',
+          '|     | A   | B   |',
+          '| --- | --- | --- |',
+          '|     | C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4603,19 +4593,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     | A   | B   |",
-          "| --- | --- | --- |",
-          "|     | C   | D   |",
-          "bar",
+          'foo',
+          '|     | A   | B   |',
+          '| --- | --- | --- |',
+          '|     | C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4625,11 +4615,11 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     | A   | B   |",
-          "| --- | --- | --- |",
-          "|     | C   | D   |",
-          "bar",
+          'foo',
+          '|     | A   | B   |',
+          '| --- | --- | --- |',
+          '|     | C   | D   |',
+          'bar',
         ]);
       }
     });
@@ -4638,15 +4628,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#deleteColumn}
    */
-  describe("#deleteColumn(options)", () => {
-    it("should delete a column at the current focus", () => {
+  describe('#deleteColumn(options)', () => {
+    it('should delete a column at the current focus', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -4656,20 +4646,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4683,20 +4673,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   |",
-          "| --- |",
-          "| D   |",
-          "bar",
+          'foo',
+          '| B   |',
+          '| --- |',
+          '| D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -4710,20 +4700,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   |",
-          "| --- |",
-          "| C   |",
-          "bar",
+          'foo',
+          '| A   |',
+          '| --- |',
+          '| C   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -4733,20 +4723,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -4760,20 +4750,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(1);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   |",
-          "| --- |",
-          "| D   |",
-          "bar",
+          'foo',
+          '| B   |',
+          '| --- |',
+          '| D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4787,20 +4777,20 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   |",
-          "| --- |",
-          "| D   |",
-          "bar",
+          'foo',
+          '| B   |',
+          '| --- |',
+          '| D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A |",
-          " | ----- |",
-          "  | C |",
-          "bar",
+          'foo',
+          '| A |',
+          ' | ----- |',
+          '  | C |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4810,19 +4800,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "|     |",
-          "| --- |",
-          "|     |",
-          "bar",
+          'foo',
+          '|     |',
+          '| --- |',
+          '|     |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -4836,11 +4826,11 @@ describe("TableEditor", () => {
         expect(range.end.row).to.equal(3);
         expect(range.end.column).to.equal(3);
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   |",
-          "| --- |",
-          "| D   |",
-          "bar",
+          'foo',
+          '| B   |',
+          '| --- |',
+          '| D   |',
+          'bar',
         ]);
       }
     });
@@ -4849,15 +4839,15 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#moveColumn}
    */
-  describe("#moveColumn(offset, options)", () => {
-    it("should move the focused column by the specified offset", () => {
+  describe('#moveColumn(offset, options)', () => {
+    it('should move the focused column by the specified offset', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -4867,20 +4857,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -4890,20 +4880,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4913,20 +4903,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -4936,20 +4926,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   | A   |",
-          "| --- | --- |",
-          "| D   | C   |",
-          "bar",
+          'foo',
+          '| B   | A   |',
+          '| --- | --- |',
+          '| D   | C   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -4959,20 +4949,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   | A   |",
-          "| --- | --- |",
-          "| D   | C   |",
-          "bar",
+          'foo',
+          '| B   | A   |',
+          '| --- | --- |',
+          '| D   | C   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 6));
         const tableEditor = new TableEditor(textEditor);
@@ -4982,20 +4972,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -5005,20 +4995,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(1, 9));
         const tableEditor = new TableEditor(textEditor);
@@ -5028,20 +5018,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(13);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5051,20 +5041,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(3);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5074,20 +5064,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(9);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   | A   |",
-          "| --- | --- |",
-          "| D   | C   |",
-          "bar",
+          'foo',
+          '| B   | A   |',
+          '| --- | --- |',
+          '| D   | C   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5097,20 +5087,20 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          " | ----- | --- |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5120,19 +5110,19 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   | A   |",
-          "| --- | --- |",
-          "| D   | C   |",
-          "bar",
+          'foo',
+          '| B   | A   |',
+          '| --- | --- |',
+          '| D   | C   |',
+          'bar',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5142,11 +5132,11 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(8);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| B   | A   |",
-          "| --- | --- |",
-          "| D   | C   |",
-          "bar",
+          'foo',
+          '| B   | A   |',
+          '| --- | --- |',
+          '| D   | C   |',
+          'bar',
         ]);
       }
     });
@@ -5155,18 +5145,18 @@ describe("TableEditor", () => {
   /**
    * @test {TableEditor#formatAll}
    */
-  describe("#formatAll(options)", () => {
-    it("should format all the tables in the text editor", () => {
+  describe('#formatAll(options)', () => {
+    it('should format all the tables in the text editor', () => {
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          " | ----- | --- |",
-          "  | G | H |",
-          "baz",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          ' | ----- | --- |',
+          '  | G | H |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(0, 0));
         const tableEditor = new TableEditor(textEditor);
@@ -5176,27 +5166,27 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(0);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'baz',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          " | ----- | --- |",
-          "  | G | H |",
-          "baz",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          ' | ----- | --- |',
+          '  | G | H |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(2, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5206,27 +5196,27 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'baz',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          " | ----- | --- |",
-          "  | G | H |",
-          "baz",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          ' | ----- | --- |',
+          '  | G | H |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(3, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -5236,27 +5226,27 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'baz',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          " | ----- | --- |",
-          "  | G | H |",
-          "baz",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          ' | ----- | --- |',
+          '  | G | H |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(6, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5266,27 +5256,27 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'baz',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          " | ----- | --- |",
-          "  | G | H |",
-          "baz",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          ' | ----- | --- |',
+          '  | G | H |',
+          'baz',
         ]);
         textEditor.setCursorPosition(new Point(7, 3));
         const tableEditor = new TableEditor(textEditor);
@@ -5296,25 +5286,25 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(3);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
-          "baz",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          'baz',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          "  | G | H |",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          '  | G | H |',
         ]);
         textEditor.setCursorPosition(new Point(4, 2));
         const tableEditor = new TableEditor(textEditor);
@@ -5324,24 +5314,24 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| A | B |",
-          "  | C | D |",
-          "bar",
-          "| E | F |",
-          "  | G | H |",
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          'bar',
+          '| E | F |',
+          '  | G | H |',
         ]);
         textEditor.setCursorPosition(new Point(5, 4));
         const tableEditor = new TableEditor(textEditor);
@@ -5351,36 +5341,34 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "bar",
-          "| E   | F   |",
-          "| --- | --- |",
-          "| G   | H   |",
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
         ]);
       }
       {
         const textEditor = new TextEditor([
-          "foo",
-          "| ? | ? |", // not included in table for some reason
-          "| A | B |",
-          "  | C | D |",
-          "| ? | ? |", // not included in table for some reason
-          "bar",
-          " * | E | F |",
-          " *  | ----- | --- |",
-          " *   | G | H |",
-          "baz",
+          'foo',
+          '| ? | ? |', // not included in table for some reason
+          '| A | B |',
+          '  | C | D |',
+          '| ? | ? |', // not included in table for some reason
+          'bar',
+          ' * | E | F |',
+          ' *  | ----- | --- |',
+          ' *   | G | H |',
+          'baz',
         ]);
-        textEditor.acceptsTableEdit = function (row) {
-          return row !== 1 && row !== 4;
-        };
+        textEditor.acceptsTableEdit = (row) => row !== 1 && row !== 4;
         textEditor.setCursorPosition(new Point(1, 2));
         const tableEditor = new TableEditor(textEditor);
         const ops = optionsWithDefaults({
-          leftMarginChars: new Set("*"),
+          leftMarginChars: new Set('*'),
         });
         tableEditor.formatAll(ops);
         const pos = textEditor.getCursorPosition();
@@ -5388,17 +5376,17 @@ describe("TableEditor", () => {
         expect(pos.column).to.equal(2);
         expect(textEditor.getSelectionRange()).to.be.undefined;
         expect(textEditor.getLines()).to.deep.equal([
-          "foo",
-          "| ? | ? |",
-          "| A   | B   |",
-          "| --- | --- |",
-          "| C   | D   |",
-          "| ? | ? |",
-          "bar",
-          " * | E   | F   |",
-          " * | --- | --- |",
-          " * | G   | H   |",
-          "baz",
+          'foo',
+          '| ? | ? |',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| ? | ? |',
+          'bar',
+          ' * | E   | F   |',
+          ' * | --- | --- |',
+          ' * | G   | H   |',
+          'baz',
         ]);
       }
     });

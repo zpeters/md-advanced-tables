@@ -1,18 +1,21 @@
-import { expect } from "chai";
+/* eslint-disable no-unused-expressions */
+// TODO: switch to another testing library
+// https://github.com/moll/js-must#beware-of-libraries-that-assert-on-property-access
 
-import { Alignment } from "../lib/alignment";
-import { TableCell } from "../lib/table-cell";
+import { Alignment } from '../lib/alignment';
+import { TableCell } from '../lib/table-cell';
+import { expect } from 'chai';
 
 /**
  * @test {TableCell}
  */
-describe("TableCell", () => {
+describe('TableCell', () => {
   /**
    * @test {TableCell.constructor}
    */
-  describe("constructor(rawContent)", () => {
-    it("should create a new TableCell object", () => {
-      const cell = new TableCell("  foo  ");
+  describe('constructor(rawContent)', () => {
+    it('should create a new TableCell object', () => {
+      const cell = new TableCell('  foo  ');
       expect(cell).to.be.an.instanceOf(TableCell);
     });
   });
@@ -20,19 +23,19 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#rawContent}
    */
-  describe("#rawContent", () => {
-    it("should get the raw content of the cell", () => {
+  describe('#rawContent', () => {
+    it('should get the raw content of the cell', () => {
       {
-        const cell = new TableCell("");
-        expect(cell.rawContent).to.equal("");
+        const cell = new TableCell('');
+        expect(cell.rawContent).to.equal('');
       }
       {
-        const cell = new TableCell("    ");
-        expect(cell.rawContent).to.equal("    ");
+        const cell = new TableCell('    ');
+        expect(cell.rawContent).to.equal('    ');
       }
       {
-        const cell = new TableCell("  foo  ");
-        expect(cell.rawContent).to.equal("  foo  ");
+        const cell = new TableCell('  foo  ');
+        expect(cell.rawContent).to.equal('  foo  ');
       }
     });
   });
@@ -40,19 +43,19 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#content}
    */
-  describe("#content", () => {
-    it("should get the trimmed content of the cell", () => {
+  describe('#content', () => {
+    it('should get the trimmed content of the cell', () => {
       {
-        const cell = new TableCell("");
-        expect(cell.content).to.equal("");
+        const cell = new TableCell('');
+        expect(cell.content).to.equal('');
       }
       {
-        const cell = new TableCell("    ");
-        expect(cell.content).to.equal("");
+        const cell = new TableCell('    ');
+        expect(cell.content).to.equal('');
       }
       {
-        const cell = new TableCell("  foo  ");
-        expect(cell.content).to.equal("foo");
+        const cell = new TableCell('  foo  ');
+        expect(cell.content).to.equal('foo');
       }
     });
   });
@@ -60,18 +63,18 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#paddingLeft}
    */
-  describe("#paddingLeft", () => {
-    it("should get the width of the left padding of the cell", () => {
+  describe('#paddingLeft', () => {
+    it('should get the width of the left padding of the cell', () => {
       {
-        const cell = new TableCell("");
+        const cell = new TableCell('');
         expect(cell.paddingLeft).to.equal(0);
       }
       {
-        const cell = new TableCell("    ");
+        const cell = new TableCell('    ');
         expect(cell.paddingLeft).to.equal(1);
       }
       {
-        const cell = new TableCell("  foo  ");
+        const cell = new TableCell('  foo  ');
         expect(cell.paddingLeft).to.equal(2);
       }
     });
@@ -80,18 +83,18 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#paddingRight}
    */
-  describe("#paddingRight", () => {
-    it("should get the width of the right padding of the cell", () => {
+  describe('#paddingRight', () => {
+    it('should get the width of the right padding of the cell', () => {
       {
-        const cell = new TableCell("");
+        const cell = new TableCell('');
         expect(cell.paddingRight).to.equal(0);
       }
       {
-        const cell = new TableCell("    ");
+        const cell = new TableCell('    ');
         expect(cell.paddingRight).to.equal(3);
       }
       {
-        const cell = new TableCell("  foo  ");
+        const cell = new TableCell('  foo  ');
         expect(cell.paddingRight).to.equal(2);
       }
     });
@@ -100,60 +103,60 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#toText}
    */
-  describe("#toText()", () => {
-    it("should return the raw content of the cell", () => {
-      const cell = new TableCell("  foo  ");
-      expect(cell.toText()).to.equal("  foo  ");
+  describe('#toText()', () => {
+    it('should return the raw content of the cell', () => {
+      const cell = new TableCell('  foo  ');
+      expect(cell.toText()).to.equal('  foo  ');
     });
   });
 
   /**
    * @test {TableCell#isDelimiter}
    */
-  describe("#isDelimiter()", () => {
-    it("should return true if it only contains hyphens with optional one leading and trailing colons", () => {
+  describe('#isDelimiter()', () => {
+    it('should return true if it only contains hyphens with optional one leading and trailing colons', () => {
       {
-        const cell = new TableCell("  ---  ");
+        const cell = new TableCell('  ---  ');
         expect(cell.isDelimiter()).to.be.true;
       }
       {
-        const cell = new TableCell(" :---  ");
+        const cell = new TableCell(' :---  ');
         expect(cell.isDelimiter()).to.be.true;
       }
       {
-        const cell = new TableCell("  ---: ");
+        const cell = new TableCell('  ---: ');
         expect(cell.isDelimiter()).to.be.true;
       }
       {
-        const cell = new TableCell(" :---: ");
+        const cell = new TableCell(' :---: ');
         expect(cell.isDelimiter()).to.be.true;
       }
       {
-        const cell = new TableCell("");
+        const cell = new TableCell('');
         expect(cell.isDelimiter()).to.be.false;
       }
       {
-        const cell = new TableCell("    ");
+        const cell = new TableCell('    ');
         expect(cell.isDelimiter()).to.be.false;
       }
       {
-        const cell = new TableCell("  foo  ");
+        const cell = new TableCell('  foo  ');
         expect(cell.isDelimiter()).to.be.false;
       }
       {
-        const cell = new TableCell("  ::  ");
+        const cell = new TableCell('  ::  ');
         expect(cell.isDelimiter()).to.be.false;
       }
       {
-        const cell = new TableCell("  - -  ");
+        const cell = new TableCell('  - -  ');
         expect(cell.isDelimiter()).to.be.false;
       }
       {
-        const cell = new TableCell(": ---  ");
+        const cell = new TableCell(': ---  ');
         expect(cell.isDelimiter()).to.be.false;
       }
       {
-        const cell = new TableCell("::---  ");
+        const cell = new TableCell('::---  ');
         expect(cell.isDelimiter()).to.be.false;
       }
     });
@@ -162,28 +165,28 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#getAlignment}
    */
-  describe("#getAlignment()", () => {
-    it("should return the alignment that the cell represents", () => {
+  describe('#getAlignment()', () => {
+    it('should return the alignment that the cell represents', () => {
       {
-        const cell = new TableCell("  ---  ");
+        const cell = new TableCell('  ---  ');
         expect(cell.getAlignment()).to.equal(Alignment.NONE);
       }
       {
-        const cell = new TableCell(" :---  ");
+        const cell = new TableCell(' :---  ');
         expect(cell.getAlignment()).to.equal(Alignment.LEFT);
       }
       {
-        const cell = new TableCell("  ---: ");
+        const cell = new TableCell('  ---: ');
         expect(cell.getAlignment()).to.equal(Alignment.RIGHT);
       }
       {
-        const cell = new TableCell(" :---: ");
+        const cell = new TableCell(' :---: ');
         expect(cell.getAlignment()).to.equal(Alignment.CENTER);
       }
     });
 
-    it("should return undefined if the cell is not a delimiter", () => {
-      const cell = new TableCell("  foo  ");
+    it('should return undefined if the cell is not a delimiter', () => {
+      const cell = new TableCell('  foo  ');
       expect(cell.getAlignment()).to.be.undefined;
     });
   });
@@ -191,14 +194,14 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#computeContentOffset}
    */
-  describe("#computeContentOffset(rawOffset)", () => {
-    it("should compute a relative position in the trimmed content from that in the raw content", () => {
+  describe('#computeContentOffset(rawOffset)', () => {
+    it('should compute a relative position in the trimmed content from that in the raw content', () => {
       {
-        const cell = new TableCell("");
+        const cell = new TableCell('');
         expect(cell.computeContentOffset(0)).to.equal(0);
       }
       {
-        const cell = new TableCell("    ");
+        const cell = new TableCell('    ');
         expect(cell.computeContentOffset(0)).to.equal(0);
         expect(cell.computeContentOffset(1)).to.equal(0);
         expect(cell.computeContentOffset(2)).to.equal(0);
@@ -206,7 +209,7 @@ describe("TableCell", () => {
         expect(cell.computeContentOffset(4)).to.equal(0);
       }
       {
-        const cell = new TableCell("  foo  ");
+        const cell = new TableCell('  foo  ');
         expect(cell.computeContentOffset(0)).to.equal(0);
         expect(cell.computeContentOffset(1)).to.equal(0);
         expect(cell.computeContentOffset(2)).to.equal(0);
@@ -222,18 +225,18 @@ describe("TableCell", () => {
   /**
    * @test {TableCell#computeRawOffset}
    */
-  describe("#computeRawOffset(contentOffset)", () => {
-    it("should compute a relative position in the raw content from that in the trimmed content", () => {
+  describe('#computeRawOffset(contentOffset)', () => {
+    it('should compute a relative position in the raw content from that in the trimmed content', () => {
       {
-        const cell = new TableCell("");
+        const cell = new TableCell('');
         expect(cell.computeRawOffset(0)).to.equal(0);
       }
       {
-        const cell = new TableCell("    ");
+        const cell = new TableCell('    ');
         expect(cell.computeRawOffset(0)).to.equal(1);
       }
       {
-        const cell = new TableCell("  foo  ");
+        const cell = new TableCell('  foo  ');
         expect(cell.computeRawOffset(0)).to.equal(2);
         expect(cell.computeRawOffset(1)).to.equal(3);
         expect(cell.computeRawOffset(2)).to.equal(4);

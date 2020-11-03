@@ -1,8 +1,8 @@
-import { Point } from "./point";
-import { Range } from "./range";
-import { Focus } from "./focus";
-import { TableRow } from "./table-row";
-import { TableCell } from "./table-cell";
+import { Focus } from './focus';
+import { Point } from './point';
+import { Range } from './range';
+import { TableCell } from './table-cell';
+import { TableRow } from './table-row';
 
 /**
  * A `Table` object represents a table.
@@ -10,7 +10,7 @@ import { TableCell } from "./table-cell";
  * @private
  */
 export class Table {
-  private _rows: TableRow[];
+  private readonly _rows: TableRow[];
 
   /**
    * Creates a new `Table` object.
@@ -26,7 +26,7 @@ export class Table {
    *
    * @returns The number of rows.
    */
-  getHeight(): number {
+  public getHeight(): number {
     return this._rows.length;
   }
 
@@ -35,7 +35,7 @@ export class Table {
    *
    * @returns The maximum width of the rows.
    */
-  getWidth(): number {
+  public getWidth(): number {
     return this._rows
       .map((row) => row.getWidth())
       .reduce((x, y) => Math.max(x, y), 0);
@@ -47,7 +47,7 @@ export class Table {
    *
    * @returns The width of the header row
    */
-  getHeaderWidth(): number {
+  public getHeaderWidth(): number {
     return this._rows[0].getWidth();
   }
 
@@ -56,7 +56,7 @@ export class Table {
    *
    * @returns An array of the rows.
    */
-  getRows(): TableRow[] {
+  public getRows(): TableRow[] {
     return this._rows.slice();
   }
 
@@ -65,26 +65,28 @@ export class Table {
    *
    * @returns The delimiter row; `undefined` if there is not delimiter row.
    */
-  getDelimiterRow(): TableRow | undefined {
+  public getDelimiterRow(): TableRow | undefined {
     const row = this._rows[1];
     if (row === undefined) {
       return undefined;
     }
     if (row.isDelimiter()) {
       return row;
-    } else {
-      return undefined;
     }
+    return undefined;
   }
 
   /**
    * Gets a cell at the specified index.
    *
-   * @param {number} rowIndex - Row index of the cell.
-   * @param {number} columnIndex - Column index of the cell.
+   * @param rowIndex - Row index of the cell.
+   * @param columnIndex - Column index of the cell.
    * @returns The cell at the specified index; `undefined` if not found.
    */
-  getCellAt(rowIndex: number, columnIndex: number): TableCell | undefined {
+  public getCellAt(
+    rowIndex: number,
+    columnIndex: number,
+  ): TableCell | undefined {
     const row = this._rows[rowIndex];
     if (row === undefined) {
       return undefined;
@@ -98,7 +100,7 @@ export class Table {
    * @param focus - Focus object.
    * @returns The cell at the focus; `undefined` if not found.
    */
-  getFocusedCell(focus: Focus): TableCell | undefined {
+  public getFocusedCell(focus: Focus): TableCell | undefined {
     return this.getCellAt(focus.row, focus.column);
   }
 
@@ -107,7 +109,7 @@ export class Table {
    *
    * @returns An array of text representations of the rows.
    */
-  toLines(): string[] {
+  public toLines(): string[] {
     return this._rows.map((row) => row.toText());
   }
 
@@ -119,7 +121,7 @@ export class Table {
    * @returns A focus object that corresponds to the specified point;
    * `undefined` if the row index is out of bounds.
    */
-  focusOfPosition(pos: Point, rowOffset: number): Focus | undefined {
+  public focusOfPosition(pos: Point, rowOffset: number): Focus | undefined {
     const rowIndex = pos.row - rowOffset;
     const row = this._rows[rowIndex];
     if (row === undefined) {
@@ -127,19 +129,18 @@ export class Table {
     }
     if (pos.column < row.marginLeft.length + 1) {
       return new Focus(rowIndex, -1, pos.column);
-    } else {
-      const cellWidths = row.getCells().map((cell) => cell.rawContent.length);
-      let columnPos = row.marginLeft.length + 1; // left margin + a pipe
-      let columnIndex = 0;
-      for (; columnIndex < cellWidths.length; columnIndex++) {
-        if (columnPos + cellWidths[columnIndex] + 1 > pos.column) {
-          break;
-        }
-        columnPos += cellWidths[columnIndex] + 1;
-      }
-      const offset = pos.column - columnPos;
-      return new Focus(rowIndex, columnIndex, offset);
     }
+    const cellWidths = row.getCells().map((cell) => cell.rawContent.length);
+    let columnPos = row.marginLeft.length + 1; // left margin + a pipe
+    let columnIndex = 0;
+    for (; columnIndex < cellWidths.length; columnIndex++) {
+      if (columnPos + cellWidths[columnIndex] + 1 > pos.column) {
+        break;
+      }
+      columnPos += cellWidths[columnIndex] + 1;
+    }
+    const offset = pos.column - columnPos;
+    return new Focus(rowIndex, columnIndex, offset);
   }
 
   /**
@@ -150,7 +151,7 @@ export class Table {
    * @returns A position in the text editor that corresponds to the focus;
    * `undefined` if the focused row  is out of the table.
    */
-  positionOfFocus(focus: Focus, rowOffset: number): Point | undefined {
+  public positionOfFocus(focus: Focus, rowOffset: number): Point | undefined {
     const row = this._rows[focus.row];
     if (row === undefined) {
       return undefined;
@@ -176,7 +177,10 @@ export class Table {
    * @returns A range to be selected that corresponds to the focus;
    * `undefined` if the focus does not specify any cell or the specified cell is empty.
    */
-  selectionRangeOfFocus(focus: Focus, rowOffset: number): Range | undefined {
+  public selectionRangeOfFocus(
+    focus: Focus,
+    rowOffset: number,
+  ): Range | undefined {
     const row = this._rows[focus.row];
     if (row === undefined) {
       return undefined;
@@ -185,7 +189,7 @@ export class Table {
     if (cell === undefined) {
       return undefined;
     }
-    if (cell.content === "") {
+    if (cell.content === '') {
       return undefined;
     }
     const rowPos = focus.row + rowOffset;
@@ -197,7 +201,7 @@ export class Table {
     columnPos += cell.paddingLeft;
     return new Range(
       new Point(rowPos, columnPos),
-      new Point(rowPos, columnPos + cell.content.length)
+      new Point(rowPos, columnPos + cell.content.length),
     );
   }
 }

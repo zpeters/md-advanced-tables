@@ -1,5 +1,5 @@
-import { Point } from "./point";
-import { Range } from "./range";
+import { Point } from './point';
+import { Range } from './range';
 
 /**
  * The `ITextEditor` represents an interface to a text editor.
@@ -12,30 +12,30 @@ export class ITextEditor {
    *
    * @returns A point object that represents the cursor position.
    */
-  getCursorPosition(): Point {
-    throw new Error("Not implemented: getCursorPosition");
+  public getCursorPosition(): Point {
+    throw new Error('Not implemented: getCursorPosition');
   }
 
   /**
    * Sets the cursor position to a specified one.
    */
-  setCursorPosition(pos: Point): void {
-    throw new Error("Not implemented: setCursorPosition");
+  public setCursorPosition(pos: Point): void {
+    throw new Error('Not implemented: setCursorPosition');
   }
 
   /**
    * Sets the selection range.
    * This method also expects the cursor position to be moved as the end of the selection range.
    */
-  setSelectionRange(range: Range): void {
-    throw new Error("Not implemented: setSelectionRange");
+  public setSelectionRange(range: Range): void {
+    throw new Error('Not implemented: setSelectionRange');
   }
 
   /**
    * Gets the last row index of the text editor.
    */
-  getLastRow(): number {
-    throw new Error("Not implemented: getLastRow");
+  public getLastRow(): number {
+    throw new Error('Not implemented: getLastRow');
   }
 
   /**
@@ -45,8 +45,8 @@ export class ITextEditor {
    * @param row - A row index in the text editor.
    * @returns `true` if the table at the row can be editted.
    */
-  acceptsTableEdit(row: number): boolean {
-    throw new Error("Not implemented: acceptsTableEdit");
+  public acceptsTableEdit(row: number): boolean {
+    throw new Error('Not implemented: acceptsTableEdit');
   }
 
   /**
@@ -56,8 +56,8 @@ export class ITextEditor {
    * @returns The line at the specified row.
    * The line must not contain an EOL like `"\n"` or `"\r"`.
    */
-  getLine(row: number): string {
-    throw new Error("Not implemented: getLine");
+  public getLine(row: number): string {
+    throw new Error('Not implemented: getLine');
   }
 
   /**
@@ -67,8 +67,8 @@ export class ITextEditor {
    * @param line - A string to be inserted.
    * This must not contain an EOL like `"\n"` or `"\r"`.
    */
-  insertLine(row: number, line: string): void {
-    throw new Error("Not implemented: insertLine");
+  public insertLine(row: number, line: string): void {
+    throw new Error('Not implemented: insertLine');
   }
 
   /**
@@ -76,8 +76,8 @@ export class ITextEditor {
    *
    * @param row - Row index, starts from `0`.
    */
-  deleteLine(row: number): void {
-    throw new Error("Not implemented: deleteLine");
+  public deleteLine(row: number): void {
+    throw new Error('Not implemented: deleteLine');
   }
 
   /**
@@ -89,8 +89,8 @@ export class ITextEditor {
    * @param lines - An array of string.
    * Each strings must not contain an EOL like `"\n"` or `"\r"`.
    */
-  replaceLines(startRow: number, endRow: number, lines: string[]): void {
-    throw new Error("Not implemented: replaceLines");
+  public replaceLines(startRow: number, endRow: number, lines: string[]): void {
+    throw new Error('Not implemented: replaceLines');
   }
 
   /**
@@ -98,7 +98,7 @@ export class ITextEditor {
    *
    * @param func - A callback function that executes some operations on the text editor.
    */
-  transact(func: () => void): void {
-    throw new Error("Not implemented: transact");
+  public transact(func: () => void): void {
+    throw new Error('Not implemented: transact');
   }
 }

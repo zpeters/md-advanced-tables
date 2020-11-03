@@ -1,5 +1,5 @@
-import { DefaultAlignment, HeaderAlignment } from "./alignment";
-import { FormatType, TextWidthOptions } from "./formatter";
+import { DefaultAlignment, HeaderAlignment } from './alignment';
+import { FormatType, TextWidthOptions } from './formatter';
 
 const DEFAULT_TEXT_WIDTH_OPTIONS = {
   normalize: true,

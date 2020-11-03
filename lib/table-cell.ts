@@ -1,4 +1,4 @@
-import { Alignment } from "./alignment";
+import { Alignment } from './alignment';
 
 /**
  * A `TableCell` object represents a table cell.
@@ -16,8 +16,15 @@ export class TableCell {
    */
   public readonly content: string;
 
-  private _paddingLeft: number;
-  private _paddingRight: number;
+  /**
+   * Width of the left padding of the cell.
+   */
+  public readonly paddingLeft: number;
+
+  /**
+   * Width of the right padding of the cell.
+   */
+  public readonly paddingRight: number;
 
   /**
    * Creates a new `TableCell` object.
@@ -27,28 +34,14 @@ export class TableCell {
   constructor(rawContent: string) {
     this.rawContent = rawContent;
     this.content = rawContent.trim();
-    this._paddingLeft =
-      this.content === ""
-        ? this.rawContent === ""
+    this.paddingLeft =
+      this.content === ''
+        ? this.rawContent === ''
           ? 0
           : 1
         : this.rawContent.length - this.rawContent.trimLeft().length;
-    this._paddingRight =
-      this.rawContent.length - this.content.length - this._paddingLeft;
-  }
-
-  /**
-   * Width of the left padding of the cell.
-   */
-  get paddingLeft(): number {
-    return this._paddingLeft;
-  }
-
-  /**
-   * Width of the right padding of the cell.
-   */
-  get paddingRight(): number {
-    return this._paddingRight;
+    this.paddingRight =
+      this.rawContent.length - this.content.length - this.paddingLeft;
   }
 
   /**
@@ -56,7 +49,7 @@ export class TableCell {
    *
    * @returns The raw content of the cell.
    */
-  toText(): string {
+  public toText(): string {
     return this.rawContent;
   }
 
@@ -66,7 +59,7 @@ export class TableCell {
    *
    * @returns `true` if the cell is a delimiter.
    */
-  isDelimiter(): boolean {
+  public isDelimiter(): boolean {
     return /^\s*:?-+:?\s*$/.test(this.rawContent);
   }
 
@@ -75,23 +68,20 @@ export class TableCell {
    *
    * @returns The alignment the cell represents; `undefined` if the cell is not a delimiter.
    */
-  getAlignment(): Alignment | undefined {
+  public getAlignment(): Alignment | undefined {
     if (!this.isDelimiter()) {
       return undefined;
     }
-    if (this.content[0] === ":") {
-      if (this.content[this.content.length - 1] === ":") {
+    if (this.content[0] === ':') {
+      if (this.content[this.content.length - 1] === ':') {
         return Alignment.CENTER;
-      } else {
-        return Alignment.LEFT;
       }
-    } else {
-      if (this.content[this.content.length - 1] === ":") {
-        return Alignment.RIGHT;
-      } else {
-        return Alignment.NONE;
-      }
+      return Alignment.LEFT;
     }
+    if (this.content[this.content.length - 1] === ':') {
+      return Alignment.RIGHT;
+    }
+    return Alignment.NONE;
   }
 
   /**
@@ -100,8 +90,8 @@ export class TableCell {
    * @param rawOffset - Relative position in the raw content.
    * @returns - Relative position in the trimmed content.
    */
-  computeContentOffset(rawOffset: number): number {
-    if (this.content === "") {
+  public computeContentOffset(rawOffset: number): number {
+    if (this.content === '') {
       return 0;
     }
     if (rawOffset < this.paddingLeft) {
@@ -109,9 +99,8 @@ export class TableCell {
     }
     if (rawOffset < this.paddingLeft + this.content.length) {
       return rawOffset - this.paddingLeft;
-    } else {
-      return this.content.length;
     }
+    return this.content.length;
   }
 
   /**
@@ -120,7 +109,7 @@ export class TableCell {
    * @param contentOffset - Relative position in the trimmed content.
    * @returns - Relative position in the raw content.
    */
-  computeRawOffset(contentOffset: number): number {
+  public computeRawOffset(contentOffset: number): number {
     return contentOffset + this.paddingLeft;
   }
 }

@@ -1,10 +1,9 @@
-import { getEAW } from "meaw";
-
-import { Alignment, HeaderAlignment } from "./alignment";
-import { TableCell } from "./table-cell";
-import { TableRow } from "./table-row";
-import { Table } from "./table";
-import { Options } from "./options";
+import { Alignment, DefaultAlignment, HeaderAlignment } from './alignment';
+import { Options } from './options';
+import { Table } from './table';
+import { TableCell } from './table-cell';
+import { TableRow } from './table-row';
+import { getEAW } from 'meaw';
 
 export interface FormattedTable {
   /**
@@ -66,8 +65,8 @@ export interface TextWidthOptions {
  * @param width - Width of the horizontal bar of delimiter.
  * @throws {Error} Unknown alignment.
  */
-export function _delimiterText(alignment: Alignment, width: number): string {
-  const bar = "-".repeat(width);
+export const _delimiterText = (alignment: Alignment, width: number): string => {
+  const bar = '-'.repeat(width);
   switch (alignment) {
     case Alignment.NONE:
       return ` ${bar} `;
@@ -78,26 +77,28 @@ export function _delimiterText(alignment: Alignment, width: number): string {
     case Alignment.CENTER:
       return `:${bar}:`;
     default:
-      throw new Error("Unknown alignment: " + alignment);
+      throw new Error('Unknown alignment: ' + alignment);
   }
-}
+};
 
 /**
  * Extends array size.
  *
  * @private
- * @param {Array} arr
- * @param size
- * @param {Function} callback - Callback function to fill newly created cells.
- * @returns {Array} Extended array.
+ * @param callback - Callback function to fill newly created cells.
+ * @returns Extended array.
  */
-export function _extendArray(arr: any, size: number, callback: any) {
+export const _extendArray = <T>(
+  arr: T[],
+  size: number,
+  callback: (i: number, arr: T[]) => T,
+): T[] => {
   const extended = arr.slice();
   for (let i = arr.length; i < size; i++) {
     extended.push(callback(i, arr));
   }
   return extended;
-}
+};
 
 /**
  * Completes a table by adding missing delimiter and cells.
@@ -107,11 +108,14 @@ export function _extendArray(arr: any, size: number, callback: any) {
  *
  * @throws {Error} Empty table.
  */
-export function completeTable(table: Table, options: Options): CompletedTable {
+export const completeTable = (
+  table: Table,
+  options: Options,
+): CompletedTable => {
   const tableHeight = table.getHeight();
   const tableWidth = table.getWidth();
   if (tableHeight === 0) {
-    throw new Error("Empty table");
+    throw new Error('Empty table');
   }
   const rows = table.getRows();
   const newRows = [];
@@ -123,12 +127,12 @@ export function completeTable(table: Table, options: Options): CompletedTable {
       _extendArray(
         headerCells,
         tableWidth,
-        (j: any) =>
-          new TableCell(j === headerCells.length ? headerRow.marginRight : "")
+        (j) =>
+          new TableCell(j === headerCells.length ? headerRow.marginRight : ''),
       ),
       headerRow.marginLeft,
-      headerCells.length < tableWidth ? "" : headerRow.marginRight
-    )
+      headerCells.length < tableWidth ? '' : headerRow.marginRight,
+    ),
   );
   // delimiter
   const delimiterRow = table.getDelimiterRow();
@@ -139,22 +143,22 @@ export function completeTable(table: Table, options: Options): CompletedTable {
         _extendArray(
           delimiterCells,
           tableWidth,
-          (j: any) =>
+          (j) =>
             new TableCell(
               _delimiterText(
                 Alignment.NONE,
                 j === delimiterCells.length
                   ? Math.max(
                       options.minDelimiterWidth,
-                      delimiterRow.marginRight.length - 2
+                      delimiterRow.marginRight.length - 2,
                     )
-                  : options.minDelimiterWidth
-              )
-            )
+                  : options.minDelimiterWidth,
+              ),
+            ),
         ),
         delimiterRow.marginLeft,
-        delimiterCells.length < tableWidth ? "" : delimiterRow.marginRight
-      )
+        delimiterCells.length < tableWidth ? '' : delimiterRow.marginRight,
+      ),
     );
   } else {
     newRows.push(
@@ -164,12 +168,12 @@ export function completeTable(table: Table, options: Options): CompletedTable {
           tableWidth,
           () =>
             new TableCell(
-              _delimiterText(Alignment.NONE, options.minDelimiterWidth)
-            )
+              _delimiterText(Alignment.NONE, options.minDelimiterWidth),
+            ),
         ),
-        "",
-        ""
-      )
+        '',
+        '',
+      ),
     );
   }
   // body
@@ -181,18 +185,18 @@ export function completeTable(table: Table, options: Options): CompletedTable {
         _extendArray(
           cells,
           tableWidth,
-          (j: any) => new TableCell(j === cells.length ? row.marginRight : "")
+          (j) => new TableCell(j === cells.length ? row.marginRight : ''),
         ),
         row.marginLeft,
-        cells.length < tableWidth ? "" : row.marginRight
-      )
+        cells.length < tableWidth ? '' : row.marginRight,
+      ),
     );
   }
   return {
     table: new Table(newRows),
     delimiterInserted: delimiterRow === undefined,
   };
-}
+};
 
 /**
  * Calculates the width of a text based on characters' EAW properties.
@@ -201,11 +205,11 @@ export function completeTable(table: Table, options: Options): CompletedTable {
  *
  * @returns Calculated width of the text.
  */
-export function _computeTextWidth(
+export const _computeTextWidth = (
   text: string,
-  options: TextWidthOptions
-): number {
-  const normalized = options.normalize ? text.normalize("NFC") : text;
+  options: TextWidthOptions,
+): number => {
+  const normalized = options.normalize ? text.normalize('NFC') : text;
   let w = 0;
   for (const char of normalized) {
     if (options.wideChars.has(char)) {
@@ -217,11 +221,11 @@ export function _computeTextWidth(
       continue;
     }
     switch (getEAW(char)) {
-      case "F":
-      case "W":
+      case 'F':
+      case 'W':
         w += 2;
         break;
-      case "A":
+      case 'A':
         w += options.ambiguousAsWide ? 2 : 1;
         break;
       default:
@@ -229,7 +233,7 @@ export function _computeTextWidth(
     }
   }
   return w;
-}
+};
 
 /**
  * Returns a aligned cell content.
@@ -237,60 +241,61 @@ export function _computeTextWidth(
  * @throws {Error} Unknown alignment.
  * @throws {Error} Unexpected default alignment.
  */
-export function _alignText(
+export const _alignText = (
   text: string,
   width: number,
   alignment: Alignment,
-  options: TextWidthOptions
-): string {
+  options: TextWidthOptions,
+): string => {
   const space = width - _computeTextWidth(text, options);
   if (space < 0) {
     return text;
   }
   switch (alignment) {
     case Alignment.NONE:
-      throw new Error("Unexpected default alignment");
+      throw new Error('Unexpected default alignment');
     case Alignment.LEFT:
-      return text + " ".repeat(space);
+      return text + ' '.repeat(space);
     case Alignment.RIGHT:
-      return " ".repeat(space) + text;
+      return ' '.repeat(space) + text;
     case Alignment.CENTER:
       return (
-        " ".repeat(Math.floor(space / 2)) +
+        ' '.repeat(Math.floor(space / 2)) +
         text +
-        " ".repeat(Math.ceil(space / 2))
+        ' '.repeat(Math.ceil(space / 2))
       );
     default:
-      throw new Error("Unknown alignment: " + alignment);
+      throw new Error('Unknown alignment: ' + alignment);
   }
-}
+};
 
 /**
  * Just adds one space paddings to both sides of a text.
  *
  * @private
  */
-export function _padText(text: string): string {
-  return ` ${text} `;
-}
+export const _padText = (text: string): string => ` ${text} `;
 
 /**
  * Formats a table.
  *
  * @private
  */
-export function _formatTable(table: Table, options: Options): FormattedTable {
+export const _formatTable = (
+  table: Table,
+  options: Options,
+): FormattedTable => {
   const tableHeight = table.getHeight();
   const tableWidth = table.getWidth();
   if (tableHeight === 0) {
     return {
       table,
-      marginLeft: "",
+      marginLeft: '',
     };
   }
   const marginLeft = table.getRows()[0].marginLeft;
   if (tableWidth === 0) {
-    const rows = new Array(tableHeight).fill(new TableRow([], marginLeft, ""));
+    const rows = new Array(tableHeight).fill(new TableRow([], marginLeft, ''));
     return {
       table: new Table(rows),
       marginLeft,
@@ -314,7 +319,7 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
     for (let j = 0; j < rowWidth; j++) {
       columnWidths[j] = Math.max(
         columnWidths[j],
-        _computeTextWidth(row.getCellAt(j)!.content, options.textWidthOptions)
+        _computeTextWidth(row.getCellAt(j)!.content, options.textWidthOptions),
       );
     }
   }
@@ -324,7 +329,8 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
       ? _extendArray(
           delimiterRow.getCells().map((cell) => cell.getAlignment()),
           tableWidth,
-          () => options.defaultAlignment
+          // Safe conversion because DefaultAlignment is a subset of Alignment
+          () => (options.defaultAlignment as unknown) as Alignment,
         )
       : new Array(tableWidth).fill(options.defaultAlignment);
   // format
@@ -336,7 +342,7 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
       headerRow
         .getCells()
         .map(
-          (cell: any, j: any) =>
+          (cell, j) =>
             new TableCell(
               _padText(
                 _alignText(
@@ -347,14 +353,14 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
                       ? options.defaultAlignment
                       : alignments[j]
                     : options.headerAlignment,
-                  options.textWidthOptions
-                )
-              )
-            )
+                  options.textWidthOptions,
+                ),
+              ),
+            ),
         ),
       marginLeft,
-      ""
-    )
+      '',
+    ),
   );
   // delimiter
   if (delimiterRow !== undefined) {
@@ -363,12 +369,12 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
         delimiterRow
           .getCells()
           .map(
-            (cell: any, j: any) =>
-              new TableCell(_delimiterText(alignments[j], columnWidths[j]))
+            (cell, j) =>
+              new TableCell(_delimiterText(alignments[j], columnWidths[j])),
           ),
         marginLeft,
-        ""
-      )
+        '',
+      ),
     );
   }
   // body
@@ -379,7 +385,7 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
         row
           .getCells()
           .map(
-            (cell: any, j: any) =>
+            (cell, j) =>
               new TableCell(
                 _padText(
                   _alignText(
@@ -388,21 +394,21 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
                     alignments[j] === Alignment.NONE
                       ? options.defaultAlignment
                       : alignments[j],
-                    options.textWidthOptions
-                  )
-                )
-              )
+                    options.textWidthOptions,
+                  ),
+                ),
+              ),
           ),
         marginLeft,
-        ""
-      )
+        '',
+      ),
     );
   }
   return {
     table: new Table(rows),
     marginLeft,
   };
-}
+};
 
 /**
  * Formats a table weakly.
@@ -411,21 +417,21 @@ export function _formatTable(table: Table, options: Options): FormattedTable {
  *
  * @private
  */
-export function _weakFormatTable(
+export const _weakFormatTable = (
   table: Table,
-  options: Options
-): FormattedTable {
+  options: Options,
+): FormattedTable => {
   const tableHeight = table.getHeight();
   const tableWidth = table.getWidth();
   if (tableHeight === 0) {
     return {
       table,
-      marginLeft: "",
+      marginLeft: '',
     };
   }
   const marginLeft = table.getRows()[0].marginLeft;
   if (tableWidth === 0) {
-    const rows = new Array(tableHeight).fill(new TableRow([], marginLeft, ""));
+    const rows = new Array(tableHeight).fill(new TableRow([], marginLeft, ''));
     return {
       table: new Table(rows),
       marginLeft,
@@ -440,8 +446,8 @@ export function _weakFormatTable(
     new TableRow(
       headerRow.getCells().map((cell) => new TableCell(_padText(cell.content))),
       marginLeft,
-      ""
-    )
+      '',
+    ),
   );
   // delimiter
   if (delimiterRow !== undefined) {
@@ -452,12 +458,12 @@ export function _weakFormatTable(
           .map(
             (cell) =>
               new TableCell(
-                _delimiterText(cell.getAlignment()!, options.minDelimiterWidth)
-              )
+                _delimiterText(cell.getAlignment()!, options.minDelimiterWidth),
+              ),
           ),
         marginLeft,
-        ""
-      )
+        '',
+      ),
     );
   }
   // body
@@ -467,15 +473,15 @@ export function _weakFormatTable(
       new TableRow(
         row.getCells().map((cell) => new TableCell(_padText(cell.content))),
         marginLeft,
-        ""
-      )
+        '',
+      ),
     );
   }
   return {
     table: new Table(rows),
     marginLeft,
   };
-}
+};
 
 /**
  * Represents table format type.
@@ -485,8 +491,8 @@ export function _weakFormatTable(
  *   contents are just trimmed and not aligned.
  */
 export enum FormatType {
-  NORMAL = "normal",
-  WEAK = "weak",
+  NORMAL = 'normal',
+  WEAK = 'weak',
 }
 
 /**
@@ -496,16 +502,16 @@ export enum FormatType {
  *
  * @throws {Error} Unknown format type.
  */
-export function formatTable(table: Table, options: Options): FormattedTable {
+export const formatTable = (table: Table, options: Options): FormattedTable => {
   switch (options.formatType) {
     case FormatType.NORMAL:
       return _formatTable(table, options);
     case FormatType.WEAK:
       return _weakFormatTable(table, options);
     default:
-      throw new Error("Unknown format type: " + options.formatType);
+      throw new Error('Unknown format type: ' + options.formatType);
   }
-}
+};
 
 /**
  * Alters a column's alignment of a table.
@@ -518,12 +524,12 @@ export function formatTable(table: Table, options: Options): FormattedTable {
  * @returns {Table} An altered table object.
  * If the column index is out of range, returns the original table.
  */
-export function alterAlignment(
+export const alterAlignment = (
   table: Table,
   columnIndex: number,
   alignment: Alignment,
-  options: Options
-): Table {
+  options: Options,
+): Table => {
   if (table.getHeight() < 1) {
     return table;
   }
@@ -533,16 +539,16 @@ export function alterAlignment(
   }
   const delimiterCells = delimiterRow.getCells();
   delimiterCells[columnIndex] = new TableCell(
-    _delimiterText(alignment, options.minDelimiterWidth)
+    _delimiterText(alignment, options.minDelimiterWidth),
   );
   const rows = table.getRows();
   rows[1] = new TableRow(
     delimiterCells,
     delimiterRow.marginLeft,
-    delimiterRow.marginRight
+    delimiterRow.marginRight,
   );
   return new Table(rows);
-}
+};
 
 /**
  * Inserts a row to a table.
@@ -555,15 +561,15 @@ export function alterAlignment(
  * @param row - A table row to be inserted.
  * @returns An altered table obejct.
  */
-export function insertRow(
+export const insertRow = (
   table: Table,
   rowIndex: number,
-  row: TableRow
-): Table {
+  row: TableRow,
+): Table => {
   const rows = table.getRows();
   rows.splice(Math.max(rowIndex, 2), 0, row);
   return new Table(rows);
-}
+};
 
 /**
  * Deletes a row in a table.
@@ -575,7 +581,7 @@ export function insertRow(
  * @param rowIndex - An index of the row to be deleted.
  * @returns An altered table obejct.
  */
-export function deleteRow(table: Table, rowIndex: number): Table {
+export const deleteRow = (table: Table, rowIndex: number): Table => {
   if (rowIndex === 1) {
     return table;
   }
@@ -583,15 +589,15 @@ export function deleteRow(table: Table, rowIndex: number): Table {
   if (rowIndex === 0) {
     const headerRow = rows[0];
     rows[0] = new TableRow(
-      new Array(headerRow.getWidth()).fill(new TableCell("")),
+      new Array(headerRow.getWidth()).fill(new TableCell('')),
       headerRow.marginLeft,
-      headerRow.marginRight
+      headerRow.marginRight,
     );
   } else {
     rows.splice(rowIndex, 1);
   }
   return new Table(rows);
-}
+};
 
 /**
  * Moves a row at the index to the specified destination.
@@ -602,11 +608,11 @@ export function deleteRow(table: Table, rowIndex: number): Table {
  * @param destIndex - Index of the destination.
  * @returns An altered table object.
  */
-export function moveRow(
+export const moveRow = (
   table: Table,
   rowIndex: number,
-  destIndex: number
-): Table {
+  destIndex: number,
+): Table => {
   if (rowIndex <= 1 || destIndex <= 1 || rowIndex === destIndex) {
     return table;
   }
@@ -615,7 +621,7 @@ export function moveRow(
   rows.splice(rowIndex, 1);
   rows.splice(destIndex, 0, row);
   return new Table(rows);
-}
+};
 
 /**
  * Inserts a column to a table.
@@ -625,19 +631,14 @@ export function moveRow(
  * @param columnIndex - An column index at which the new column will be inserted.
  * @param column - An array of cells.
  * @param options - An object containing options for completion.
- *
- * | property name       | type           | description             |
- * | ------------------- | -------------- | ----------------------- |
- * | `minDelimiterWidth` | {@link number} | Width of the delimiter. |
- *
- * @returns {Table} An altered table obejct.
+ * @returns An altered table obejct.
  */
-export function insertColumn(
+export const insertColumn = (
   table: Table,
   columnIndex: number,
   column: TableCell[],
-  options: Options
-): Table {
+  options: Options,
+): Table => {
   const rows = table.getRows();
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -645,14 +646,14 @@ export function insertColumn(
     const cell =
       i === 1
         ? new TableCell(
-            _delimiterText(Alignment.NONE, options.minDelimiterWidth)
+            _delimiterText(Alignment.NONE, options.minDelimiterWidth),
           )
         : column[i > 1 ? i - 1 : i];
     cells.splice(columnIndex, 0, cell);
     rows[i] = new TableRow(cells, row.marginLeft, row.marginRight);
   }
   return new Table(rows);
-}
+};
 
 /**
  * Deletes a column in a table.
@@ -665,11 +666,11 @@ export function insertColumn(
  * @param options - An object containing options for completion.
  * @returns An altered table object.
  */
-export function deleteColumn(
+export const deleteColumn = (
   table: Table,
   columnIndex: number,
-  options: Options
-): Table {
+  options: Options,
+): Table => {
   const rows = table.getRows();
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -679,7 +680,7 @@ export function deleteColumn(
         new TableCell(
           i === 1
             ? _delimiterText(Alignment.NONE, options.minDelimiterWidth)
-            : ""
+            : '',
         ),
       ];
     } else {
@@ -688,7 +689,7 @@ export function deleteColumn(
     rows[i] = new TableRow(cells, row.marginLeft, row.marginRight);
   }
   return new Table(rows);
-}
+};
 
 /**
  * Moves a column at the index to the specified destination.
@@ -699,11 +700,11 @@ export function deleteColumn(
  * @param destIndex - Index of the destination.
  * @returns An altered table object.
  */
-export function moveColumn(
+export const moveColumn = (
   table: Table,
   columnIndex: number,
-  destIndex: number
-): Table {
+  destIndex: number,
+): Table => {
   if (columnIndex === destIndex) {
     return table;
   }
@@ -717,4 +718,4 @@ export function moveColumn(
     rows[i] = new TableRow(cells, row.marginLeft, row.marginRight);
   }
   return new Table(rows);
-}
+};

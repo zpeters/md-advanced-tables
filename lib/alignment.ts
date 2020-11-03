@@ -8,10 +8,10 @@
  *
  */
 export enum Alignment {
-  NONE = "none",
-  LEFT = "left",
-  RIGHT = "right",
-  CENTER = "center",
+  NONE = 'none',
+  LEFT = 'left',
+  RIGHT = 'right',
+  CENTER = 'center',
 }
 
 /**
@@ -38,8 +38,8 @@ export enum DefaultAlignment {
  *
  */
 export enum HeaderAlignment {
-  FOLLOW = "follow",
-  LEFT = "left",
-  RIGHT = "right",
-  CENTER = "center",
+  FOLLOW = 'follow',
+  LEFT = 'left',
+  RIGHT = 'right',
+  CENTER = 'center',
 }

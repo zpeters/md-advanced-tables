@@ -1,4 +1,4 @@
-import { ITextEditor } from "./text-editor";
+import { ITextEditor } from './text-editor';
 
 /**
  * The `Insert` class represents an insertion of a line.
@@ -57,19 +57,19 @@ export class Delete {
  * @param command - A command.
  * @param rowOffset - Offset to the row index of the command.
  */
-export function _applyCommand(
+export const _applyCommand = (
   textEditor: ITextEditor,
   command: Insert | Delete,
-  rowOffset: number
-): void {
+  rowOffset: number,
+): void => {
   if (command instanceof Insert) {
     textEditor.insertLine(rowOffset + command.row, command.line);
   } else if (command instanceof Delete) {
     textEditor.deleteLine(rowOffset + command.row);
   } else {
-    throw new Error("Unknown command");
+    throw new Error('Unknown command');
   }
-}
+};
 
 /**
  * Apply an edit script (array of commands) to the text editor.
@@ -80,45 +80,43 @@ export function _applyCommand(
  * The commands are applied sequentially in the order of the array.
  * @param rowOffset - Offset to the row index of the commands.
  */
-export function applyEditScript(
+export const applyEditScript = (
   textEditor: ITextEditor,
   script: Insert[] | Delete[],
-  rowOffset: number
-): void {
+  rowOffset: number,
+): void => {
   for (const command of script) {
     _applyCommand(textEditor, command, rowOffset);
   }
-}
+};
 
 /**
  * Linked list used to remember edit script.
  *
  * @private
  */
-class IList {
-  get car() {
-    throw new Error("Not implemented");
+class IList<T> {
+  public get car(): T {
+    throw new Error('Not implemented');
   }
 
-  get cdr() {
-    throw new Error("Not implemented");
+  public get cdr(): IList<T> {
+    throw new Error('Not implemented');
   }
 
-  isEmpty() {
-    throw new Error("Not implemented");
+  public isEmpty(): boolean {
+    throw new Error('Not implemented');
   }
 
-  unshift(value: any) {
+  public unshift(value: T): Cons<T> {
     return new Cons(value, this);
   }
 
-  toArray() {
+  public toArray(): T[] {
     const arr = [];
-    let rest = this;
-    // @ts-expect-error ts-migrate(1345) FIXME: An expression of type 'void' cannot be tested for ... Remove this comment to see the full error message
+    let rest: IList<T> = this;
     while (!rest.isEmpty()) {
       arr.push(rest.car);
-      // @ts-expect-error ts-migrate(2322) FIXME: Type 'void' is not assignable to type 'this'.
       rest = rest.cdr;
     }
     return arr;
@@ -128,20 +126,20 @@ class IList {
 /**
  * @private
  */
-class Nil extends IList {
+class Nil<T> extends IList<T> {
   constructor() {
     super();
   }
 
-  get car() {
-    throw new Error("Empty list");
+  public get car(): T {
+    throw new Error('Empty list');
   }
 
-  get cdr() {
-    throw new Error("Empty list");
+  public get cdr(): IList<T> {
+    throw new Error('Empty list');
   }
 
-  isEmpty() {
+  public isEmpty(): boolean {
     return true;
   }
 }
@@ -149,30 +147,28 @@ class Nil extends IList {
 /**
  * @private
  */
-class Cons extends IList {
-  private _car: any;
-  private _cdr: any;
+class Cons<T> extends IList<T> {
+  private readonly _car: T;
+  private readonly _cdr: IList<T>;
 
-  constructor(car: any, cdr: any) {
+  constructor(car: T, cdr: IList<T>) {
     super();
     this._car = car;
     this._cdr = cdr;
   }
 
-  get car() {
+  public get car(): T {
     return this._car;
   }
 
-  get cdr() {
+  public get cdr(): IList<T> {
     return this._cdr;
   }
 
-  isEmpty() {
+  public isEmpty(): boolean {
     return false;
   }
 }
-
-const nil = new Nil();
 
 /**
  * Computes the shortest edit script between two arrays of strings.
@@ -185,11 +181,11 @@ const nil = new Nil();
  * @returns The shortest edit script that turns `from` into `to`;
  * `undefined` if no edit script is found in the given range.
  */
-export function shortestEditScript(
+export const shortestEditScript = (
   from: string[],
   to: string[],
-  limit = -1
-): Insert[] | Delete[] | undefined {
+  limit = -1,
+): (Insert | Delete)[] | undefined => {
   const fromLen = from.length;
   const toLen = to.length;
   const maxd = limit >= 0 ? Math.min(limit, fromLen + toLen) : fromLen + toLen;
@@ -200,17 +196,17 @@ export function shortestEditScript(
     const maxk = d <= toLen ? d : -d + 2 * toLen;
     for (let k = mink; k <= maxk; k += 2) {
       let i;
-      let script;
+      let script: IList<Delete | Insert>;
       if (d === 0) {
         i = 0;
-        script = nil;
+        script = new Nil();
       } else if (k === -d) {
         i = mem[offset + k + 1].i + 1;
         script = mem[offset + k + 1].script.unshift(new Delete(i + k));
       } else if (k === d) {
         i = mem[offset + k - 1].i;
         script = mem[offset + k - 1].script.unshift(
-          new Insert(i + k - 1, to[i + k - 1])
+          new Insert(i + k - 1, to[i + k - 1]),
         );
       } else {
         const vi = mem[offset + k + 1].i + 1;
@@ -221,7 +217,7 @@ export function shortestEditScript(
         } else {
           i = hi;
           script = mem[offset + k - 1].script.unshift(
-            new Insert(i + k - 1, to[i + k - 1])
+            new Insert(i + k - 1, to[i + k - 1]),
           );
         }
       }
@@ -235,4 +231,4 @@ export function shortestEditScript(
     }
   }
   return undefined;
-}
+};

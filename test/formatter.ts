@@ -1,31 +1,30 @@
-import { expect } from "chai";
-
-import { Alignment, DefaultAlignment, HeaderAlignment } from "../lib/alignment";
-import { TableCell } from "../lib/table-cell";
-import { TableRow } from "../lib/table-row";
-import { Table } from "../lib/table";
-import { Options, optionsWithDefaults } from "../lib/options";
-import { _readRow, readTable } from "../lib/parser";
+import { Alignment, DefaultAlignment, HeaderAlignment } from '../lib/alignment';
 import {
+  _alignText,
+  _computeTextWidth,
   _delimiterText,
   _extendArray,
-  completeTable,
-  _computeTextWidth,
-  _alignText,
-  _padText,
   _formatTable,
+  _padText,
   _weakFormatTable,
-  FormatType,
-  formatTable,
   alterAlignment,
-  insertRow,
-  deleteRow,
-  moveRow,
-  insertColumn,
+  completeTable,
   deleteColumn,
+  deleteRow,
+  formatTable,
+  FormatType,
+  insertColumn,
+  insertRow,
   moveColumn,
+  moveRow,
   TextWidthOptions,
-} from "../lib/formatter";
+} from '../lib/formatter';
+import { Options, optionsWithDefaults } from '../lib/options';
+import { _readRow, readTable } from '../lib/parser';
+import { Table } from '../lib/table';
+import { TableCell } from '../lib/table-cell';
+import { TableRow } from '../lib/table-row';
+import { expect } from 'chai';
 
 const parserOptions: Options = optionsWithDefaults({
   leftMarginChars: new Set(),
@@ -34,137 +33,132 @@ const parserOptions: Options = optionsWithDefaults({
 /**
  * @test {_delimiterText}
  */
-describe("_delimiterText(alignment, width)", () => {
-  it("should return a delimiter text for the specified alignment", () => {
-    expect(_delimiterText(Alignment.NONE, 5)).to.equal(" ----- ");
-    expect(_delimiterText(Alignment.LEFT, 5)).to.equal(":----- ");
-    expect(_delimiterText(Alignment.RIGHT, 5)).to.equal(" -----:");
-    expect(_delimiterText(Alignment.CENTER, 5)).to.equal(":-----:");
+describe('_delimiterText(alignment, width)', () => {
+  it('should return a delimiter text for the specified alignment', () => {
+    expect(_delimiterText(Alignment.NONE, 5)).to.equal(' ----- ');
+    expect(_delimiterText(Alignment.LEFT, 5)).to.equal(':----- ');
+    expect(_delimiterText(Alignment.RIGHT, 5)).to.equal(' -----:');
+    expect(_delimiterText(Alignment.CENTER, 5)).to.equal(':-----:');
   });
 });
 
 /**
  * @test {_extendArray}
  */
-describe("_extendArray(arr, size, callback)", () => {
-  it("should create a new array that is extended to the specified size, filling empty elements by return values of the callback", () => {
-    expect(_extendArray([], 2, (i: any) => i)).to.deep.equal([0, 1]);
-    expect(_extendArray([0, 1], 4, (i: any) => i)).to.deep.equal([0, 1, 2, 3]);
-    expect(_extendArray([0, 1, 2, 3], 2, (i: any) => i)).to.deep.equal([
-      0,
-      1,
-      2,
-      3,
-    ]);
+describe('_extendArray(arr, size, callback)', () => {
+  it('should create a new array that is extended to the specified size, filling empty elements by return values of the callback', () => {
+    expect(_extendArray([], 2, (i) => i)).to.deep.equal([0, 1]);
+    expect(_extendArray([0, 1], 4, (i) => i)).to.deep.equal([0, 1, 2, 3]);
+    expect(_extendArray([0, 1, 2, 3], 2, (i) => i)).to.deep.equal([0, 1, 2, 3]);
   });
 });
 
 /**
  * @test {completeTable}
  */
-describe("completeTable(table, options)", () => {
-  it("should complete the given table by adding missing delimiter and cells", () => {
+describe('completeTable(table, options)', () => {
+  it('should complete the given table by adding missing delimiter and cells', () => {
     {
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", "| --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', '| --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const completed = completeTable(
         table,
-        optionsWithDefaults({ minDelimiterWidth: 3 })
+        optionsWithDefaults({ minDelimiterWidth: 3 }),
       );
-      expect(completed).to.be.an("object");
+      expect(completed).to.be.an('object');
       expect(completed.table).to.be.an.instanceOf(Table);
       expect(completed.table.toLines()).to.deep.equal(expectLines);
       expect(completed.delimiterInserted).to.be.false;
     }
     {
       const tableLines = [
-        "| A | ",
-        "| --- |:----- | --- |",
-        "  | B | C | D |  ",
+        '| A | ',
+        '| --- |:----- | --- |',
+        '  | B | C | D |  ',
       ];
       const expectLines = [
-        "| A | ||",
-        "| --- |:----- | --- |",
-        "  | B | C | D |  ",
+        '| A | ||',
+        '| --- |:----- | --- |',
+        '  | B | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const completed = completeTable(
         table,
-        optionsWithDefaults({ minDelimiterWidth: 3 })
+        optionsWithDefaults({ minDelimiterWidth: 3 }),
       );
-      expect(completed).to.be.an("object");
+      expect(completed).to.be.an('object');
       expect(completed.table).to.be.an.instanceOf(Table);
       expect(completed.table.toLines()).to.deep.equal(expectLines);
       expect(completed.delimiterInserted).to.be.false;
     }
     {
       const tableLines = [
-        "| A | B | C |",
-        "| --- |      ",
-        "  | D | E | F |  ",
+        '| A | B | C |',
+        '| --- |      ',
+        '  | D | E | F |  ',
       ];
       const expectLines = [
-        "| A | B | C |",
-        "| --- | ---- | --- |",
-        "  | D | E | F |  ",
+        '| A | B | C |',
+        '| --- | ---- | --- |',
+        '  | D | E | F |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const completed = completeTable(
         table,
-        optionsWithDefaults({ minDelimiterWidth: 3 })
+        optionsWithDefaults({ minDelimiterWidth: 3 }),
       );
-      expect(completed).to.be.an("object");
+      expect(completed).to.be.an('object');
       expect(completed.table).to.be.an.instanceOf(Table);
       expect(completed.table.toLines()).to.deep.equal(expectLines);
       expect(completed.delimiterInserted).to.be.false;
     }
     {
-      const tableLines = ["| A | B |", "  | C | D |  "];
-      const expectLines = ["| A | B |", "| --- | --- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', '  | C | D |  '];
+      const expectLines = ['| A | B |', '| --- | --- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const completed = completeTable(
         table,
-        optionsWithDefaults({ minDelimiterWidth: 3 })
+        optionsWithDefaults({ minDelimiterWidth: 3 }),
       );
-      expect(completed).to.be.an("object");
+      expect(completed).to.be.an('object');
       expect(completed.table).to.be.an.instanceOf(Table);
       expect(completed.table.toLines()).to.deep.equal(expectLines);
       expect(completed.delimiterInserted).to.be.true;
     }
     {
-      const tableLines = ["| A | B | C |", "| --- |:----- | --- |", "  | D | "];
+      const tableLines = ['| A | B | C |', '| --- |:----- | --- |', '  | D | '];
       const expectLines = [
-        "| A | B | C |",
-        "| --- |:----- | --- |",
-        "  | D | ||",
+        '| A | B | C |',
+        '| --- |:----- | --- |',
+        '  | D | ||',
       ];
       const table = readTable(tableLines, parserOptions);
       const completed = completeTable(
         table,
-        optionsWithDefaults({ minDelimiterWidth: 3 })
+        optionsWithDefaults({ minDelimiterWidth: 3 }),
       );
-      expect(completed).to.be.an("object");
+      expect(completed).to.be.an('object');
       expect(completed.table).to.be.an.instanceOf(Table);
       expect(completed.table.toLines()).to.deep.equal(expectLines);
       expect(completed.delimiterInserted).to.be.false;
     }
     {
-      const tableLines = ["|", "|", " |  "];
-      const expectLines = ["||", "| --- |", "||", " |  |"];
+      const tableLines = ['|', '|', ' |  '];
+      const expectLines = ['||', '| --- |', '||', ' |  |'];
       const table = readTable(tableLines, parserOptions);
       const completed = completeTable(
         table,
-        optionsWithDefaults({ minDelimiterWidth: 3 })
+        optionsWithDefaults({ minDelimiterWidth: 3 }),
       );
-      expect(completed).to.be.an("object");
+      expect(completed).to.be.an('object');
       expect(completed.table).to.be.an.instanceOf(Table);
       expect(completed.table.toLines()).to.deep.equal(expectLines);
       expect(completed.delimiterInserted).to.be.true;
     }
   });
 
-  it("should throw an error if table has no rows", () => {
+  it('should throw an error if table has no rows', () => {
     const table = new Table([]);
     expect(() => {
       completeTable(table, optionsWithDefaults({ minDelimiterWidth: 3 }));
@@ -175,8 +169,8 @@ describe("completeTable(table, options)", () => {
 /**
  * @test {_computeTextWidth}
  */
-describe("_computeTextWidth(text, options)", () => {
-  it("should compute the width of a text based on EAW properties", () => {
+describe('_computeTextWidth(text, options)', () => {
+  it('should compute the width of a text based on EAW properties', () => {
     {
       const options: TextWidthOptions = {
         normalize: false,
@@ -184,8 +178,8 @@ describe("_computeTextWidth(text, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_computeTextWidth("ℵAあＡｱ∀", options)).to.equal(8);
-      expect(_computeTextWidth("\u0065\u0301", options)).to.equal(2);
+      expect(_computeTextWidth('ℵAあＡｱ∀', options)).to.equal(8);
+      expect(_computeTextWidth('\u0065\u0301', options)).to.equal(2);
     }
     {
       const options: TextWidthOptions = {
@@ -194,25 +188,25 @@ describe("_computeTextWidth(text, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: true,
       };
-      expect(_computeTextWidth("ℵAあＡｱ∀", options)).to.equal(9);
+      expect(_computeTextWidth('ℵAあＡｱ∀', options)).to.equal(9);
     }
     {
       const options: TextWidthOptions = {
         normalize: false,
-        wideChars: new Set(["∀"]),
+        wideChars: new Set(['∀']),
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_computeTextWidth("ℵAあＡｱ∀", options)).to.equal(9);
+      expect(_computeTextWidth('ℵAあＡｱ∀', options)).to.equal(9);
     }
     {
       const options: TextWidthOptions = {
         normalize: false,
         wideChars: new Set(),
-        narrowChars: new Set(["∀"]),
+        narrowChars: new Set(['∀']),
         ambiguousAsWide: true,
       };
-      expect(_computeTextWidth("ℵAあＡｱ∀", options)).to.equal(8);
+      expect(_computeTextWidth('ℵAあＡｱ∀', options)).to.equal(8);
     }
     {
       const options: TextWidthOptions = {
@@ -221,7 +215,7 @@ describe("_computeTextWidth(text, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_computeTextWidth("\u0065\u0301", options)).to.equal(1);
+      expect(_computeTextWidth('\u0065\u0301', options)).to.equal(1);
     }
   });
 });
@@ -229,8 +223,8 @@ describe("_computeTextWidth(text, options)", () => {
 /**
  * @test {_alignText}
  */
-describe("_alignText(text, width, alignment, options)", () => {
-  it("should align the text", () => {
+describe('_alignText(text, width, alignment, options)', () => {
+  it('should align the text', () => {
     {
       const options: TextWidthOptions = {
         normalize: false,
@@ -238,23 +232,23 @@ describe("_alignText(text, width, alignment, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_alignText("foo", 5, Alignment.LEFT, options)).to.equal("foo  ");
-      expect(_alignText("foo", 5, Alignment.RIGHT, options)).to.equal("  foo");
-      expect(_alignText("foo", 5, Alignment.CENTER, options)).to.equal(" foo ");
+      expect(_alignText('foo', 5, Alignment.LEFT, options)).to.equal('foo  ');
+      expect(_alignText('foo', 5, Alignment.RIGHT, options)).to.equal('  foo');
+      expect(_alignText('foo', 5, Alignment.CENTER, options)).to.equal(' foo ');
 
-      expect(_alignText("foobar", 5, Alignment.LEFT, options)).to.equal(
-        "foobar"
+      expect(_alignText('foobar', 5, Alignment.LEFT, options)).to.equal(
+        'foobar',
       );
-      expect(_alignText("foobar", 5, Alignment.RIGHT, options)).to.equal(
-        "foobar"
+      expect(_alignText('foobar', 5, Alignment.RIGHT, options)).to.equal(
+        'foobar',
       );
-      expect(_alignText("foobar", 5, Alignment.CENTER, options)).to.equal(
-        "foobar"
+      expect(_alignText('foobar', 5, Alignment.CENTER, options)).to.equal(
+        'foobar',
       );
 
-      expect(_alignText("∀", 5, Alignment.LEFT, options)).to.equal("∀    ");
-      expect(_alignText("\u0065\u0301", 5, Alignment.LEFT, options)).to.equal(
-        "\u0065\u0301   "
+      expect(_alignText('∀', 5, Alignment.LEFT, options)).to.equal('∀    ');
+      expect(_alignText('\u0065\u0301', 5, Alignment.LEFT, options)).to.equal(
+        '\u0065\u0301   ',
       );
     }
     {
@@ -264,12 +258,12 @@ describe("_alignText(text, width, alignment, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_alignText("foo", 7, Alignment.LEFT, options)).to.equal("foo    ");
-      expect(_alignText("foo", 7, Alignment.RIGHT, options)).to.equal(
-        "    foo"
+      expect(_alignText('foo', 7, Alignment.LEFT, options)).to.equal('foo    ');
+      expect(_alignText('foo', 7, Alignment.RIGHT, options)).to.equal(
+        '    foo',
       );
-      expect(_alignText("foo", 7, Alignment.CENTER, options)).to.equal(
-        "  foo  "
+      expect(_alignText('foo', 7, Alignment.CENTER, options)).to.equal(
+        '  foo  ',
       );
     }
     {
@@ -279,25 +273,25 @@ describe("_alignText(text, width, alignment, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: true,
       };
-      expect(_alignText("∀", 5, Alignment.LEFT, options)).to.equal("∀   ");
+      expect(_alignText('∀', 5, Alignment.LEFT, options)).to.equal('∀   ');
     }
     {
       const options: TextWidthOptions = {
         normalize: false,
-        wideChars: new Set("∀"),
+        wideChars: new Set('∀'),
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_alignText("∀", 5, Alignment.LEFT, options)).to.equal("∀   ");
+      expect(_alignText('∀', 5, Alignment.LEFT, options)).to.equal('∀   ');
     }
     {
       const options: TextWidthOptions = {
         normalize: false,
         wideChars: new Set(),
-        narrowChars: new Set("∀"),
+        narrowChars: new Set('∀'),
         ambiguousAsWide: true,
       };
-      expect(_alignText("∀", 5, Alignment.LEFT, options)).to.equal("∀    ");
+      expect(_alignText('∀', 5, Alignment.LEFT, options)).to.equal('∀    ');
     }
     {
       const options: TextWidthOptions = {
@@ -306,13 +300,13 @@ describe("_alignText(text, width, alignment, options)", () => {
         narrowChars: new Set(),
         ambiguousAsWide: false,
       };
-      expect(_alignText("\u0065\u0301", 5, Alignment.LEFT, options)).to.equal(
-        "\u0065\u0301    "
+      expect(_alignText('\u0065\u0301', 5, Alignment.LEFT, options)).to.equal(
+        '\u0065\u0301    ',
       );
     }
   });
 
-  it("should throw an error if default alignment is specified", () => {
+  it('should throw an error if default alignment is specified', () => {
     const options: TextWidthOptions = {
       normalize: false,
       wideChars: new Set(),
@@ -320,7 +314,7 @@ describe("_alignText(text, width, alignment, options)", () => {
       ambiguousAsWide: false,
     };
     expect(() => {
-      _alignText("foo", 5, Alignment.NONE, options);
+      _alignText('foo', 5, Alignment.NONE, options);
     }).to.throw(Error, /unexpected/i);
   });
 });
@@ -328,18 +322,18 @@ describe("_alignText(text, width, alignment, options)", () => {
 /**
  * @test {_padText}
  */
-describe("_padText(text)", () => {
-  it("should add one space paddings to both sides of the text", () => {
-    expect(_padText("")).to.equal("  ");
-    expect(_padText("foo")).to.equal(" foo ");
+describe('_padText(text)', () => {
+  it('should add one space paddings to both sides of the text', () => {
+    expect(_padText('')).to.equal('  ');
+    expect(_padText('foo')).to.equal(' foo ');
   });
 });
 
 /**
  * @test {_formatTable}
  */
-describe("_formatTable(table, options)", () => {
-  it("should format a table", () => {
+describe('_formatTable(table, options)', () => {
+  it('should format a table', () => {
     const twOptions: TextWidthOptions = {
       normalize: false,
       wideChars: new Set(),
@@ -357,7 +351,7 @@ describe("_formatTable(table, options)", () => {
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.getHeight()).to.equal(0);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -368,33 +362,33 @@ describe("_formatTable(table, options)", () => {
       });
       {
         const table = new Table([
-          new TableRow([], "", " "),
-          new TableRow([], "  ", "   "),
+          new TableRow([], '', ' '),
+          new TableRow([], '  ', '   '),
         ]);
         const formatted = _formatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         const rows = formatted.table.getRows();
         for (const row of rows) {
           expect(row.getWidth()).to.equal(0);
-          expect(row.marginLeft).to.equal("");
-          expect(row.marginRight).to.equal("");
+          expect(row.marginLeft).to.equal('');
+          expect(row.marginRight).to.equal('');
         }
-        expect(formatted.marginLeft).to.equal("");
+        expect(formatted.marginLeft).to.equal('');
       }
       {
         const table = new Table([
-          new TableRow([], " ", " "),
-          new TableRow([], "  ", "   "),
+          new TableRow([], ' ', ' '),
+          new TableRow([], '  ', '   '),
         ]);
         const formatted = _formatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         const rows = formatted.table.getRows();
         for (const row of rows) {
           expect(row.getWidth()).to.equal(0);
-          expect(row.marginLeft).to.equal(" ");
-          expect(row.marginRight).to.equal("");
+          expect(row.marginLeft).to.equal(' ');
+          expect(row.marginRight).to.equal('');
         }
-        expect(formatted.marginLeft).to.equal(" ");
+        expect(formatted.marginLeft).to.equal(' ');
       }
     }
     {
@@ -405,22 +399,22 @@ describe("_formatTable(table, options)", () => {
         textWidthOptions: twOptions,
       });
       {
-        const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-        const expectLines = ["| A   | B   |", "| --- |:--- |", "| C   |"];
+        const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+        const expectLines = ['| A   | B   |', '| --- |:--- |', '| C   |'];
         const table = readTable(tableLines, parserOptions);
         const formatted = _formatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         expect(formatted.table.toLines()).to.deep.equal(expectLines);
-        expect(formatted.marginLeft).to.equal("");
+        expect(formatted.marginLeft).to.equal('');
       }
       {
-        const tableLines = [" | A | B |", "| --- |:----- |", "  | C |  "];
-        const expectLines = [" | A   | B   |", " | --- |:--- |", " | C   |"];
+        const tableLines = [' | A | B |', '| --- |:----- |', '  | C |  '];
+        const expectLines = [' | A   | B   |', ' | --- |:--- |', ' | C   |'];
         const table = readTable(tableLines, parserOptions);
         const formatted = _formatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         expect(formatted.table.toLines()).to.deep.equal(expectLines);
-        expect(formatted.marginLeft).to.equal(" ");
+        expect(formatted.marginLeft).to.equal(' ');
       }
     }
     {
@@ -430,17 +424,17 @@ describe("_formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
       const expectLines = [
-        "| A     | B     |",
-        "| ----- |:----- |",
-        "| C     |",
+        '| A     | B     |',
+        '| ----- |:----- |',
+        '| C     |',
       ];
       const table = readTable(tableLines, parserOptions);
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -449,13 +443,13 @@ describe("_formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["|  A  | B   |", "| --- |:--- |", "|  C  |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['|  A  | B   |', '| --- |:--- |', '|  C  |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -464,13 +458,13 @@ describe("_formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.CENTER,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["|  A  |  B  |", "| --- |:--- |", "| C   |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['|  A  |  B  |', '| --- |:--- |', '| C   |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -479,13 +473,13 @@ describe("_formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "  | CDE |  "];
-      const expectLines = ["| A   | B |", "| CDE |"];
+      const tableLines = ['| A | B |', '  | CDE |  '];
+      const expectLines = ['| A   | B |', '| CDE |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -494,13 +488,13 @@ describe("_formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| ---:|", "  | CDE | FG | "];
-      const expectLines = ["|   A | B  |", "| ---:|", "| CDE | FG |"];
+      const tableLines = ['| A | B |', '| ---:|', '  | CDE | FG | '];
+      const expectLines = ['|   A | B  |', '| ---:|', '| CDE | FG |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -509,13 +503,13 @@ describe("_formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["|", "|", " |  "];
-      const expectLines = ["|  |", "|  |", "|  |"];
+      const tableLines = ['|', '|', ' |  '];
+      const expectLines = ['|  |', '|  |', '|  |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
   });
 });
@@ -523,8 +517,8 @@ describe("_formatTable(table, options)", () => {
 /**
  * @test {_weakFormatTable}
  */
-describe("_weakFormatTable(table, options)", () => {
-  it("should format a table weakly", () => {
+describe('_weakFormatTable(table, options)', () => {
+  it('should format a table weakly', () => {
     const twOptions: TextWidthOptions = {
       normalize: false,
       wideChars: new Set(),
@@ -542,7 +536,7 @@ describe("_weakFormatTable(table, options)", () => {
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.getHeight()).to.equal(0);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -553,33 +547,33 @@ describe("_weakFormatTable(table, options)", () => {
       });
       {
         const table = new Table([
-          new TableRow([], "", " "),
-          new TableRow([], "  ", "   "),
+          new TableRow([], '', ' '),
+          new TableRow([], '  ', '   '),
         ]);
         const formatted = _weakFormatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         const rows = formatted.table.getRows();
         for (const row of rows) {
           expect(row.getWidth()).to.equal(0);
-          expect(row.marginLeft).to.equal("");
-          expect(row.marginRight).to.equal("");
+          expect(row.marginLeft).to.equal('');
+          expect(row.marginRight).to.equal('');
         }
-        expect(formatted.marginLeft).to.equal("");
+        expect(formatted.marginLeft).to.equal('');
       }
       {
         const table = new Table([
-          new TableRow([], " ", " "),
-          new TableRow([], "  ", "   "),
+          new TableRow([], ' ', ' '),
+          new TableRow([], '  ', '   '),
         ]);
         const formatted = _weakFormatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         const rows = formatted.table.getRows();
         for (const row of rows) {
           expect(row.getWidth()).to.equal(0);
-          expect(row.marginLeft).to.equal(" ");
-          expect(row.marginRight).to.equal("");
+          expect(row.marginLeft).to.equal(' ');
+          expect(row.marginRight).to.equal('');
         }
-        expect(formatted.marginLeft).to.equal(" ");
+        expect(formatted.marginLeft).to.equal(' ');
       }
     }
     {
@@ -590,22 +584,22 @@ describe("_weakFormatTable(table, options)", () => {
         textWidthOptions: twOptions,
       });
       {
-        const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-        const expectLines = ["| A | B |", "| --- |:--- |", "| C |"];
+        const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+        const expectLines = ['| A | B |', '| --- |:--- |', '| C |'];
         const table = readTable(tableLines, parserOptions);
         const formatted = _weakFormatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         expect(formatted.table.toLines()).to.deep.equal(expectLines);
-        expect(formatted.marginLeft).to.equal("");
+        expect(formatted.marginLeft).to.equal('');
       }
       {
-        const tableLines = [" | A | B |", "| --- |:----- |", "  | C |  "];
-        const expectLines = [" | A | B |", " | --- |:--- |", " | C |"];
+        const tableLines = [' | A | B |', '| --- |:----- |', '  | C |  '];
+        const expectLines = [' | A | B |', ' | --- |:--- |', ' | C |'];
         const table = readTable(tableLines, parserOptions);
         const formatted = _weakFormatTable(table, options);
         expect(formatted.table).to.be.an.instanceOf(Table);
         expect(formatted.table.toLines()).to.deep.equal(expectLines);
-        expect(formatted.marginLeft).to.equal(" ");
+        expect(formatted.marginLeft).to.equal(' ');
       }
     }
     {
@@ -615,13 +609,13 @@ describe("_weakFormatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["| A | B |", "| ----- |:----- |", "| C |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['| A | B |', '| ----- |:----- |', '| C |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -630,13 +624,13 @@ describe("_weakFormatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["| A | B |", "| --- |:--- |", "| C |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['| A | B |', '| --- |:--- |', '| C |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -645,13 +639,13 @@ describe("_weakFormatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.CENTER,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["| A | B |", "| --- |:--- |", "| C |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['| A | B |', '| --- |:--- |', '| C |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -660,13 +654,13 @@ describe("_weakFormatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "  | CDE |  "];
-      const expectLines = ["| A | B |", "| CDE |"];
+      const tableLines = ['| A | B |', '  | CDE |  '];
+      const expectLines = ['| A | B |', '| CDE |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -675,13 +669,13 @@ describe("_weakFormatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| ---:|", "  | CDE | FG | "];
-      const expectLines = ["| A | B |", "| ---:|", "| CDE | FG |"];
+      const tableLines = ['| A | B |', '| ---:|', '  | CDE | FG | '];
+      const expectLines = ['| A | B |', '| ---:|', '| CDE | FG |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -690,13 +684,13 @@ describe("_weakFormatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["|", "|", " |  "];
-      const expectLines = ["|  |", "|  |", "|  |"];
+      const tableLines = ['|', '|', ' |  '];
+      const expectLines = ['|  |', '|  |', '|  |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = _weakFormatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
   });
 });
@@ -704,8 +698,8 @@ describe("_weakFormatTable(table, options)", () => {
 /**
  * @test {formatTable}
  */
-describe("formatTable(table, options)", () => {
-  it("should format a table, normally or weakly", () => {
+describe('formatTable(table, options)', () => {
+  it('should format a table, normally or weakly', () => {
     const twOptions: TextWidthOptions = {
       normalize: false,
       wideChars: new Set(),
@@ -720,13 +714,13 @@ describe("formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["| A   | B   |", "| --- |:--- |", "| C   |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['| A   | B   |', '| --- |:--- |', '| C   |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
     {
       const options = optionsWithDefaults({
@@ -736,13 +730,13 @@ describe("formatTable(table, options)", () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
-      const tableLines = ["| A | B |", "| --- |:----- |", "  | C |  "];
-      const expectLines = ["| A | B |", "| --- |:--- |", "| C |"];
+      const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+      const expectLines = ['| A | B |', '| --- |:--- |', '| C |'];
       const table = readTable(tableLines, parserOptions);
       const formatted = formatTable(table, options);
       expect(formatted.table).to.be.an.instanceOf(Table);
       expect(formatted.table.toLines()).to.deep.equal(expectLines);
-      expect(formatted.marginLeft).to.equal("");
+      expect(formatted.marginLeft).to.equal('');
     }
   });
 });
@@ -750,14 +744,14 @@ describe("formatTable(table, options)", () => {
 /**
  * @test {alterAlignment}
  */
-describe("alterAlignment(table, columnIndex, alignment, options)", () => {
+describe('alterAlignment(table, columnIndex, alignment, options)', () => {
   it("should alter a column's alignment at the index to the specified alignment", () => {
     {
       const options = optionsWithDefaults({
         minDelimiterWidth: 3,
       });
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- | ---:|", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- | ---:|', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = alterAlignment(table, 1, Alignment.RIGHT, options);
       expect(altered).to.be.an.instanceOf(Table);
@@ -767,8 +761,8 @@ describe("alterAlignment(table, columnIndex, alignment, options)", () => {
       const options = optionsWithDefaults({
         minDelimiterWidth: 5,
       });
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- | -----:|", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- | -----:|', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = alterAlignment(table, 1, Alignment.RIGHT, options);
       expect(altered).to.be.an.instanceOf(Table);
@@ -776,12 +770,12 @@ describe("alterAlignment(table, columnIndex, alignment, options)", () => {
     }
   });
 
-  it("should return the original table if alternation can not be done", () => {
+  it('should return the original table if alternation can not be done', () => {
     {
       const options = optionsWithDefaults({
         minDelimiterWidth: 3,
       });
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = alterAlignment(table, -1, Alignment.RIGHT, options);
       expect(altered).to.equal(table);
@@ -790,7 +784,7 @@ describe("alterAlignment(table, columnIndex, alignment, options)", () => {
       const options = optionsWithDefaults({
         minDelimiterWidth: 3,
       });
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = alterAlignment(table, 2, Alignment.RIGHT, options);
       expect(altered).to.equal(table);
@@ -801,57 +795,57 @@ describe("alterAlignment(table, columnIndex, alignment, options)", () => {
 /**
  * @test {insertRow}
  */
-describe("insertRow(table, rowIndex, row)", () => {
-  it("should insert the row at the specified index and return a new table", () => {
+describe('insertRow(table, rowIndex, row)', () => {
+  it('should insert the row at the specified index and return a new table', () => {
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "| X | Y |",
-        "  | C | D |  ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '| X | Y |',
+        '  | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
-      const altered = insertRow(table, 0, _readRow("| X | Y |"));
+      const altered = insertRow(table, 0, _readRow('| X | Y |'));
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "| X | Y |",
-        "  | C | D |  ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '| X | Y |',
+        '  | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
-      const altered = insertRow(table, 1, _readRow("| X | Y |"));
+      const altered = insertRow(table, 1, _readRow('| X | Y |'));
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "| X | Y |",
-        "  | C | D |  ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '| X | Y |',
+        '  | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
-      const altered = insertRow(table, 2, _readRow("| X | Y |"));
+      const altered = insertRow(table, 2, _readRow('| X | Y |'));
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "| X | Y |",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '| X | Y |',
       ];
       const table = readTable(tableLines, parserOptions);
-      const altered = insertRow(table, 3, _readRow("| X | Y |"));
+      const altered = insertRow(table, 3, _readRow('| X | Y |'));
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
@@ -861,27 +855,27 @@ describe("insertRow(table, rowIndex, row)", () => {
 /**
  * @test {deleteRow}
  */
-describe("deleteRow(table, rowIndex)", () => {
-  it("should delete a row at the specified index and return a new table object", () => {
+describe('deleteRow(table, rowIndex)', () => {
+  it('should delete a row at the specified index and return a new table object', () => {
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["|||", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['|||', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = deleteRow(table, 0);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = deleteRow(table, 1);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |"];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |'];
       const table = readTable(tableLines, parserOptions);
       const altered = deleteRow(table, 2);
       expect(altered).to.be.an.instanceOf(Table);
@@ -893,43 +887,43 @@ describe("deleteRow(table, rowIndex)", () => {
 /**
  * @test {moveRow}
  */
-describe("moveRow(table, rowIndex, destIndex)", () => {
-  it("should move a row at the index to the specified destination", () => {
+describe('moveRow(table, rowIndex, destIndex)', () => {
+  it('should move a row at the index to the specified destination', () => {
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 0, 0);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 0, 1);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 0, 2);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 1, 0);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 1, 2);
       expect(altered).to.be.an.instanceOf(Table);
@@ -937,16 +931,16 @@ describe("moveRow(table, rowIndex, destIndex)", () => {
     }
     {
       const tableLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "   | E | F | ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '   | E | F | ',
       ];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "   | E | F | ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '   | E | F | ',
       ];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 2, 0);
@@ -955,16 +949,16 @@ describe("moveRow(table, rowIndex, destIndex)", () => {
     }
     {
       const tableLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "   | E | F | ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '   | E | F | ',
       ];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "   | E | F | ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '   | E | F | ',
       ];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 2, 2);
@@ -973,16 +967,16 @@ describe("moveRow(table, rowIndex, destIndex)", () => {
     }
     {
       const tableLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "   | E | F | ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '   | E | F | ',
       ];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "   | E | F | ",
-        "  | C | D |  ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '   | E | F | ',
+        '  | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 2, 3);
@@ -991,16 +985,16 @@ describe("moveRow(table, rowIndex, destIndex)", () => {
     }
     {
       const tableLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "  | C | D |  ",
-        "   | E | F | ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '  | C | D |  ',
+        '   | E | F | ',
       ];
       const expectLines = [
-        "| A | B |",
-        " | --- |:----- |",
-        "   | E | F | ",
-        "  | C | D |  ",
+        '| A | B |',
+        ' | --- |:----- |',
+        '   | E | F | ',
+        '  | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const altered = moveRow(table, 3, 2);
@@ -1013,76 +1007,76 @@ describe("moveRow(table, rowIndex, destIndex)", () => {
 /**
  * @test {insertColumn}
  */
-describe("insertColumn(table, columnIndex, column, options)", () => {
-  it("should insert a column at the specified index", () => {
+describe('insertColumn(table, columnIndex, column, options)', () => {
+  it('should insert a column at the specified index', () => {
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| X | A | B |",
-        " | --- | --- |:----- |",
-        "  | Y | C | D |  ",
+        '| X | A | B |',
+        ' | --- | --- |:----- |',
+        '  | Y | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 3 });
       const altered = insertColumn(
         table,
         0,
-        [new TableCell(" X "), new TableCell(" Y ")],
-        opts
+        [new TableCell(' X '), new TableCell(' Y ')],
+        opts,
       );
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| X | A | B |",
-        " | ----- | --- |:----- |",
-        "  | Y | C | D |  ",
+        '| X | A | B |',
+        ' | ----- | --- |:----- |',
+        '  | Y | C | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 5 });
       const altered = insertColumn(
         table,
         0,
-        [new TableCell(" X "), new TableCell(" Y ")],
-        opts
+        [new TableCell(' X '), new TableCell(' Y ')],
+        opts,
       );
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D |  '];
       const expectLines = [
-        "| A | X | B |",
-        " | --- | --- |:----- |",
-        "  | C | Y | D |  ",
+        '| A | X | B |',
+        ' | --- | --- |:----- |',
+        '  | C | Y | D |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 3 });
       const altered = insertColumn(
         table,
         1,
-        [new TableCell(" X "), new TableCell(" Y ")],
-        opts
+        [new TableCell(' X '), new TableCell(' Y ')],
+        opts,
       );
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- | ----- |", "  | C | D |  "];
+      const tableLines = ['| A | B |', ' | --- | ----- |', '  | C | D |  '];
       const expectLines = [
-        "| A | B | X |",
-        " | --- | ----- | --- |",
-        "  | C | D | Y |  ",
+        '| A | B | X |',
+        ' | --- | ----- | --- |',
+        '  | C | D | Y |  ',
       ];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 3 });
       const altered = insertColumn(
         table,
         2,
-        [new TableCell(" X "), new TableCell(" Y ")],
-        opts
+        [new TableCell(' X '), new TableCell(' Y ')],
+        opts,
       );
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
@@ -1093,11 +1087,11 @@ describe("insertColumn(table, columnIndex, column, options)", () => {
 /**
  * @test {deleteColumn}
  */
-describe("deleteColumn(table, columnIndex)", () => {
-  it("should delete a column at the specified index", () => {
+describe('deleteColumn(table, columnIndex)', () => {
+  it('should delete a column at the specified index', () => {
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
-      const expectLines = ["| B |", " |:----- |", "  | D | "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
+      const expectLines = ['| B |', ' |:----- |', '  | D | '];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 3 });
       const altered = deleteColumn(table, 0, opts);
@@ -1105,8 +1099,8 @@ describe("deleteColumn(table, columnIndex)", () => {
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
-      const expectLines = ["| A |", " | --- |", "  | C | "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
+      const expectLines = ['| A |', ' | --- |', '  | C | '];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 3 });
       const altered = deleteColumn(table, 1, opts);
@@ -1114,8 +1108,8 @@ describe("deleteColumn(table, columnIndex)", () => {
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A |", " |:----- |", "  | B | "];
-      const expectLines = ["||", " | --- |", "  || "];
+      const tableLines = ['| A |', ' |:----- |', '  | B | '];
+      const expectLines = ['||', ' | --- |', '  || '];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 3 });
       const altered = deleteColumn(table, 0, opts);
@@ -1123,8 +1117,8 @@ describe("deleteColumn(table, columnIndex)", () => {
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A |", " |:----- |", "  | B | "];
-      const expectLines = ["||", " | ----- |", "  || "];
+      const tableLines = ['| A |', ' |:----- |', '  | B | '];
+      const expectLines = ['||', ' | ----- |', '  || '];
       const table = readTable(tableLines, parserOptions);
       const opts = optionsWithDefaults({ minDelimiterWidth: 5 });
       const altered = deleteColumn(table, 0, opts);
@@ -1137,35 +1131,35 @@ describe("deleteColumn(table, columnIndex)", () => {
 /**
  * @test {moveColumn}
  */
-describe("moveColumn(table, columnIndex, destIndex)", () => {
-  it("should move a column at the index to the specified destination", () => {
+describe('moveColumn(table, columnIndex, destIndex)', () => {
+  it('should move a column at the index to the specified destination', () => {
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveColumn(table, 0, 0);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
-      const expectLines = ["| B | A |", " |:----- | --- |", "  | D | C | "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
+      const expectLines = ['| B | A |', ' |:----- | --- |', '  | D | C | '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveColumn(table, 0, 1);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
-      const expectLines = ["| B | A |", " |:----- | --- |", "  | D | C | "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
+      const expectLines = ['| B | A |', ' |:----- | --- |', '  | D | C | '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveColumn(table, 1, 0);
       expect(altered).to.be.an.instanceOf(Table);
       expect(altered.toLines()).to.deep.equal(expectLines);
     }
     {
-      const tableLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
-      const expectLines = ["| A | B |", " | --- |:----- |", "  | C | D | "];
+      const tableLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
+      const expectLines = ['| A | B |', ' | --- |:----- |', '  | C | D | '];
       const table = readTable(tableLines, parserOptions);
       const altered = moveColumn(table, 1, 1);
       expect(altered).to.be.an.instanceOf(Table);

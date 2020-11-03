@@ -1,11 +1,11 @@
-export { Point } from "./point";
-export { Range } from "./range";
-export { Focus } from "./focus";
-export { Alignment, DefaultAlignment, HeaderAlignment } from "./alignment";
-export { TableCell } from "./table-cell";
-export { TableRow } from "./table-row";
-export { Table } from "./table";
-export { readTable } from "./parser";
+export { Point } from './point';
+export { Range } from './range';
+export { Focus } from './focus';
+export { Alignment, DefaultAlignment, HeaderAlignment } from './alignment';
+export { TableCell } from './table-cell';
+export { TableRow } from './table-row';
+export { Table } from './table';
+export { readTable } from './parser';
 export {
   FormatType,
   completeTable,
@@ -17,13 +17,13 @@ export {
   insertColumn,
   deleteColumn,
   moveColumn,
-} from "./formatter.js";
+} from './formatter.js';
 export {
   Insert,
   Delete,
   applyEditScript,
   shortestEditScript,
-} from "./edit-script";
-export { ITextEditor } from "./text-editor";
-export { Options } from "./options";
-export { TableEditor } from "./table-editor";
+} from './edit-script';
+export { ITextEditor } from './text-editor';
+export { Options } from './options';
+export { TableEditor } from './table-editor';

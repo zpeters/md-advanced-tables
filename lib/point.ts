@@ -26,7 +26,7 @@ export class Point {
   /**
    * Checks if the point is equal to another point.
    */
-  equals(point: Point): boolean {
+  public equals(point: Point): boolean {
     return this.row === point.row && this.column === point.column;
   }
 }

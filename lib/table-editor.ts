@@ -1,25 +1,26 @@
-import { Point } from "./point";
-import { Range } from "./range";
-import { Focus } from "./focus";
-import { TableCell } from "./table-cell";
-import { TableRow } from "./table-row";
-import { marginRegexSrc, readTable } from "./parser";
+import { Alignment } from './alignment';
+import { applyEditScript, shortestEditScript } from './edit-script';
+import { Focus } from './focus';
 import {
-  completeTable,
-  formatTable,
   alterAlignment,
-  insertRow,
-  deleteRow,
-  moveRow,
-  insertColumn,
+  completeTable,
   deleteColumn,
+  deleteRow,
+  formatTable,
+  FormattedTable,
+  insertColumn,
+  insertRow,
   moveColumn,
-} from "./formatter";
-import { shortestEditScript, applyEditScript } from "./edit-script";
-import { Table } from "./table";
-import { ITextEditor } from "./text-editor";
-import { Options } from "./options";
-import { Alignment } from "./alignment";
+  moveRow,
+} from './formatter';
+import { Options } from './options';
+import { marginRegexSrc, readTable } from './parser';
+import { Point } from './point';
+import { Range } from './range';
+import { Table } from './table';
+import { TableCell } from './table-cell';
+import { TableRow } from './table-row';
+import { ITextEditor } from './text-editor';
 
 /**
  * Creates a regular expression object that matches a table row.
@@ -28,9 +29,8 @@ import { Alignment } from "./alignment";
  * A pipe `|`, a backslash `\`, and a backquote will be ignored.
  * @returns A regular expression object that matches a table row.
  */
-export function _createIsTableRowRegex(leftMarginChars: Set<string>): RegExp {
-  return new RegExp(`^${marginRegexSrc(leftMarginChars)}\\|`, "u");
-}
+export const _createIsTableRowRegex = (leftMarginChars: Set<string>): RegExp =>
+  new RegExp(`^${marginRegexSrc(leftMarginChars)}\\|`, 'u');
 
 interface TableInfo {
   /**
@@ -60,36 +60,33 @@ interface TableInfo {
  * @private
  * @param focus - A focus.
  * @param table - A completed but not formatted table with original cell contents.
- * @param {Object} formatted - Information of the formatted table.
+ * @param formatted - Information of the formatted table.
  * @param moved - Indicates whether the focus position is moved by a command or not.
  */
-export function _computeNewOffset(
+export const _computeNewOffset = (
   focus: Focus,
   table: Table,
-  formatted: any,
-  moved: boolean
-): number {
+  formatted: FormattedTable,
+  moved: boolean,
+): number => {
   if (moved) {
     const formattedFocusedCell = formatted.table.getFocusedCell(focus);
     if (formattedFocusedCell !== undefined) {
       return formattedFocusedCell.computeRawOffset(0);
-    } else {
-      return focus.column < 0 ? formatted.marginLeft.length : 0;
     }
-  } else {
-    const focusedCell = table.getFocusedCell(focus);
-    const formattedFocusedCell = formatted.table.getFocusedCell(focus);
-    if (focusedCell !== undefined && formattedFocusedCell !== undefined) {
-      const contentOffset = Math.min(
-        focusedCell.computeContentOffset(focus.offset),
-        formattedFocusedCell.content.length
-      );
-      return formattedFocusedCell.computeRawOffset(contentOffset);
-    } else {
-      return focus.column < 0 ? formatted.marginLeft.length : 0;
-    }
+    return focus.column < 0 ? formatted.marginLeft.length : 0;
   }
-}
+  const focusedCell = table.getFocusedCell(focus);
+  const formattedFocusedCell = formatted.table.getFocusedCell(focus);
+  if (focusedCell !== undefined && formattedFocusedCell !== undefined) {
+    const contentOffset = Math.min(
+      focusedCell.computeContentOffset(focus.offset),
+      formattedFocusedCell.content.length,
+    );
+    return formattedFocusedCell.computeRawOffset(contentOffset);
+  }
+  return focus.column < 0 ? formatted.marginLeft.length : 0;
+};
 
 /**
  * The `TableEditor` class is at the center of the markdown-table-editor.
@@ -99,7 +96,7 @@ export function _computeNewOffset(
  * To use this class, the text editor (or an interface to it) must implement {@link ITextEditor}.
  */
 export class TableEditor {
-  private _textEditor: ITextEditor;
+  private readonly _textEditor: ITextEditor;
 
   // smart cursor
   private _scActive: boolean;
@@ -110,7 +107,7 @@ export class TableEditor {
   /**
    * Creates a new table editor instance.
    *
-   * @param {ITextEditor} textEditor - A text editor interface.
+   * @param textEditor - A text editor interface.
    */
   constructor(textEditor: ITextEditor) {
     this._textEditor = textEditor;
@@ -123,7 +120,7 @@ export class TableEditor {
    * Resets the smart cursor.
    * Call this method when the table editor is inactivated.
    */
-  resetSmartCursor(): void {
+  public resetSmartCursor(): void {
     this._scActive = false;
   }
 
@@ -133,7 +130,7 @@ export class TableEditor {
    *
    * @returns `true` if the cursor is in a table row.
    */
-  cursorIsInTable(options: Options): boolean {
+  public cursorIsInTable(options: Options): boolean {
     const re = _createIsTableRowRegex(options.leftMarginChars);
     const pos = this._textEditor.getCursorPosition();
     return (
@@ -182,7 +179,7 @@ export class TableEditor {
     }
     const range = new Range(
       new Point(startRow, 0),
-      new Point(endRow, lines[lines.length - 1].length)
+      new Point(endRow, lines[lines.length - 1].length),
     );
     const table = readTable(lines, options);
     const focus = table.focusOfPosition(pos, startRow);
@@ -197,7 +194,7 @@ export class TableEditor {
    * Finds a table and does an operation with it.
    *
    * @private
-   * @param {Function} func - A function that does some operation on table information obtained by
+   * @param func - A function that does some operation on table information obtained by
    * {@link TableEditor#_findTable}.
    */
   _withTable(options: Options, func: (tableInfo: TableInfo) => void): void {
@@ -222,7 +219,7 @@ export class TableEditor {
     startRow: number,
     endRow: number,
     newLines: string[],
-    oldLines: string[] | undefined = undefined
+    oldLines: string[] | undefined = undefined,
   ): void {
     if (oldLines !== undefined) {
       // apply the shortest edit script
@@ -272,7 +269,7 @@ export class TableEditor {
   /**
    * Formats the table under the cursor.
    */
-  format(options: Options): void {
+  public format(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -283,7 +280,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(completed.table, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false)
+        _computeNewOffset(newFocus, completed.table, formatted, false),
       );
       // apply
       this._textEditor.transact(() => {
@@ -291,7 +288,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._moveToFocus(range.start.row, formatted.table, newFocus);
       });
@@ -301,7 +298,7 @@ export class TableEditor {
   /**
    * Formats and escapes from the table.
    */
-  escape(options: Options): void {
+  public escape(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       // complete
       const completed = completeTable(table, options);
@@ -314,16 +311,16 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         let newPos;
         if (newRow > this._textEditor.getLastRow()) {
-          this._textEditor.insertLine(newRow, "");
+          this._textEditor.insertLine(newRow, '');
           newPos = new Point(newRow, 0);
         } else {
           const re = new RegExp(
             `^${marginRegexSrc(options.leftMarginChars)}`,
-            "u"
+            'u',
           );
           const nextLine = this._textEditor.getLine(newRow);
           // @ts-expect-error TODO
@@ -339,7 +336,7 @@ export class TableEditor {
   /**
    * Alters the alignment of the focused column.
    */
-  alignColumn(alignment: Alignment, options: Options): void {
+  public alignColumn(alignment: Alignment, options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -357,13 +354,13 @@ export class TableEditor {
           completed.table,
           newFocus.column,
           alignment,
-          options
+          options,
         );
       }
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false)
+        _computeNewOffset(newFocus, completed.table, formatted, false),
       );
       // apply
       this._textEditor.transact(() => {
@@ -371,7 +368,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._moveToFocus(range.start.row, formatted.table, newFocus);
       });
@@ -381,7 +378,7 @@ export class TableEditor {
   /**
    * Selects the focused cell content.
    */
-  selectCell(options: Options): void {
+  public selectCell(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -392,7 +389,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(completed.table, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false)
+        _computeNewOffset(newFocus, completed.table, formatted, false),
       );
       // apply
       this._textEditor.transact(() => {
@@ -400,7 +397,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._selectFocus(range.start.row, formatted.table, newFocus);
       });
@@ -413,7 +410,11 @@ export class TableEditor {
    * @param rowOffset - Offset in row.
    * @param columnOffset - Offset in column.
    */
-  moveFocus(rowOffset: number, columnOffset: number, options: Options): void {
+  public moveFocus(
+    rowOffset: number,
+    columnOffset: number,
+    options: Options,
+  ): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -435,8 +436,8 @@ export class TableEditor {
         newFocus = newFocus.setRow(
           Math.min(
             Math.max(newFocus.row + rowOffset + skip, 0),
-            height <= 2 ? 0 : height - 1
-          )
+            height <= 2 ? 0 : height - 1,
+          ),
         );
       }
       if (columnOffset !== 0) {
@@ -446,7 +447,7 @@ export class TableEditor {
           !(newFocus.column > width - 1 && columnOffset > 0)
         ) {
           newFocus = newFocus.setColumn(
-            Math.min(Math.max(newFocus.column + columnOffset, 0), width - 1)
+            Math.min(Math.max(newFocus.column + columnOffset, 0), width - 1),
           );
         }
       }
@@ -454,7 +455,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(completed.table, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, moved)
+        _computeNewOffset(newFocus, completed.table, formatted, moved),
       );
       // apply
       this._textEditor.transact(() => {
@@ -462,7 +463,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         if (moved) {
           this._selectFocus(range.start.row, formatted.table, newFocus);
@@ -479,7 +480,7 @@ export class TableEditor {
   /**
    * Moves the focus to the next cell.
    */
-  nextCell(options: Options): void {
+  public nextCell(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       // reset smart cursor if moved
       const focusMoved =
@@ -515,25 +516,25 @@ export class TableEditor {
         // insert an empty row if needed
         if (newFocus.row > altered.getHeight() - 1) {
           const row = new Array(altered.getHeaderWidth()).fill(
-            new TableCell("")
+            new TableCell(''),
           );
           altered = insertRow(
             altered,
             altered.getHeight(),
-            new TableRow(row, "", "")
+            new TableRow(row, '', ''),
           );
         }
       } else {
         // insert an empty column if needed
         if (newFocus.column > altered.getHeaderWidth() - 1) {
           const column = new Array(altered.getHeight() - 1).fill(
-            new TableCell("")
+            new TableCell(''),
           );
           altered = insertColumn(
             altered,
             altered.getHeaderWidth(),
             column,
-            options
+            options,
           );
         }
         // move to next column
@@ -542,13 +543,13 @@ export class TableEditor {
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, true)
+        _computeNewOffset(newFocus, altered, formatted, true),
       );
       // apply
       const newLines = formatted.table.toLines();
       if (newFocus.column > formatted.table.getHeaderWidth() - 1) {
         // add margin
-        newLines[newFocus.row] += " ";
+        newLines[newFocus.row] += ' ';
         newFocus = newFocus.setOffset(1);
       }
       this._textEditor.transact(() => {
@@ -577,7 +578,7 @@ export class TableEditor {
   /**
    * Moves the focus to the previous cell.
    */
-  previousCell(options: Options): void {
+  public previousCell(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -595,7 +596,7 @@ export class TableEditor {
         newFocus = new Focus(
           0,
           completed.table.getHeaderWidth() - 1,
-          newFocus.offset
+          newFocus.offset,
         );
       } else {
         if (newFocus.column > 0) {
@@ -604,7 +605,7 @@ export class TableEditor {
           newFocus = new Focus(
             newFocus.row === 2 ? 0 : newFocus.row - 1,
             completed.table.getHeaderWidth() - 1,
-            newFocus.offset
+            newFocus.offset,
           );
         }
       }
@@ -612,7 +613,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(completed.table, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, moved)
+        _computeNewOffset(newFocus, completed.table, formatted, moved),
       );
       // apply
       this._textEditor.transact(() => {
@@ -620,7 +621,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         if (moved) {
           this._selectFocus(range.start.row, formatted.table, newFocus);
@@ -637,7 +638,7 @@ export class TableEditor {
   /**
    * Moves the focus to the next row.
    */
-  nextRow(options: Options): void {
+  public nextRow(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       // reset smart cursor if moved
       const focusMoved =
@@ -676,17 +677,17 @@ export class TableEditor {
       }
       // insert empty row if needed
       if (newFocus.row > altered.getHeight() - 1) {
-        const row = new Array(altered.getHeaderWidth()).fill(new TableCell(""));
+        const row = new Array(altered.getHeaderWidth()).fill(new TableCell(''));
         altered = insertRow(
           altered,
           altered.getHeight(),
-          new TableRow(row, "", "")
+          new TableRow(row, '', ''),
         );
       }
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, true)
+        _computeNewOffset(newFocus, altered, formatted, true),
       );
       // apply
       this._textEditor.transact(() => {
@@ -694,7 +695,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._selectFocus(range.start.row, formatted.table, newFocus);
       });
@@ -720,7 +721,7 @@ export class TableEditor {
   /**
    * Inserts an empty row at the current focus.
    */
-  insertRow(options: Options): void {
+  public insertRow(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -735,17 +736,17 @@ export class TableEditor {
       newFocus = newFocus.setColumn(0);
       // insert an empty row
       const row = new Array(completed.table.getHeaderWidth()).fill(
-        new TableCell("")
+        new TableCell(''),
       );
       const altered = insertRow(
         completed.table,
         newFocus.row,
-        new TableRow(row, "", "")
+        new TableRow(row, '', ''),
       );
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, true)
+        _computeNewOffset(newFocus, altered, formatted, true),
       );
       // apply
       this._textEditor.transact(() => {
@@ -753,7 +754,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._moveToFocus(range.start.row, formatted.table, newFocus);
       });
@@ -764,7 +765,7 @@ export class TableEditor {
   /**
    * Deletes a row at the current focus.
    */
-  deleteRow(options: Options): void {
+  public deleteRow(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -785,7 +786,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, moved)
+        _computeNewOffset(newFocus, altered, formatted, moved),
       );
       // apply
       this._textEditor.transact(() => {
@@ -793,7 +794,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         if (moved) {
           this._selectFocus(range.start.row, formatted.table, newFocus);
@@ -808,9 +809,9 @@ export class TableEditor {
   /**
    * Moves the focused row by the specified offset.
    *
-   * @param {number} offset - An offset the row is moved by.
+   * @param offset - An offset the row is moved by.
    */
-  moveRow(offset: number, options: Options): void {
+  public moveRow(offset: number, options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -823,7 +824,7 @@ export class TableEditor {
       if (newFocus.row > 1) {
         const dest = Math.min(
           Math.max(newFocus.row + offset, 2),
-          altered.getHeight() - 1
+          altered.getHeight() - 1,
         );
         altered = moveRow(altered, newFocus.row, dest);
         newFocus = newFocus.setRow(dest);
@@ -831,7 +832,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, false)
+        _computeNewOffset(newFocus, altered, formatted, false),
       );
       // apply
       this._textEditor.transact(() => {
@@ -839,7 +840,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._moveToFocus(range.start.row, formatted.table, newFocus);
       });
@@ -850,7 +851,7 @@ export class TableEditor {
   /**
    * Inserts an empty column at the current focus.
    */
-  insertColumn(options: Options): void {
+  public insertColumn(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -867,18 +868,18 @@ export class TableEditor {
       }
       // insert an empty column
       const column = new Array(completed.table.getHeight() - 1).fill(
-        new TableCell("")
+        new TableCell(''),
       );
       const altered = insertColumn(
         completed.table,
         newFocus.column,
         column,
-        options
+        options,
       );
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, true)
+        _computeNewOffset(newFocus, altered, formatted, true),
       );
       // apply
       this._textEditor.transact(() => {
@@ -886,7 +887,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._moveToFocus(range.start.row, formatted.table, newFocus);
       });
@@ -897,7 +898,7 @@ export class TableEditor {
   /**
    * Deletes a column at the current focus.
    */
-  deleteColumn(options: Options): void {
+  public deleteColumn(options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -925,7 +926,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, moved)
+        _computeNewOffset(newFocus, altered, formatted, moved),
       );
       // apply
       this._textEditor.transact(() => {
@@ -933,7 +934,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         if (moved) {
           this._selectFocus(range.start.row, formatted.table, newFocus);
@@ -948,9 +949,9 @@ export class TableEditor {
   /**
    * Moves the focused column by the specified offset.
    *
-   * @param {number} offset - An offset the column is moved by.
+   * @param offset - An offset the column is moved by.
    */
-  moveColumn(offset: number, options: Options): void {
+  public moveColumn(offset: number, options: Options): void {
     this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
       let newFocus = focus;
       // complete
@@ -966,7 +967,7 @@ export class TableEditor {
       ) {
         const dest = Math.min(
           Math.max(newFocus.column + offset, 0),
-          altered.getHeaderWidth() - 1
+          altered.getHeaderWidth() - 1,
         );
         altered = moveColumn(altered, newFocus.column, dest);
         newFocus = newFocus.setColumn(dest);
@@ -974,7 +975,7 @@ export class TableEditor {
       // format
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, false)
+        _computeNewOffset(newFocus, altered, formatted, false),
       );
       // apply
       this._textEditor.transact(() => {
@@ -982,7 +983,7 @@ export class TableEditor {
           range.start.row,
           range.end.row + 1,
           formatted.table.toLines(),
-          lines
+          lines,
         );
         this._moveToFocus(range.start.row, formatted.table, newFocus);
       });
@@ -993,7 +994,7 @@ export class TableEditor {
   /**
    * Formats all the tables in the text editor.
    */
-  formatAll(options: Options): void {
+  public formatAll(options: Options): void {
     this._textEditor.transact(() => {
       const re = _createIsTableRowRegex(options.leftMarginChars);
       let pos = this._textEditor.getCursorPosition();
@@ -1013,7 +1014,7 @@ export class TableEditor {
           const endRow = row - 1;
           const range = new Range(
             new Point(startRow, 0),
-            new Point(endRow, lines[lines.length - 1].length)
+            new Point(endRow, lines[lines.length - 1].length),
           );
           const table = readTable(lines, options);
           const focus = table.focusOfPosition(pos, startRow);
@@ -1024,11 +1025,11 @@ export class TableEditor {
             let newFocus = focus;
             const completed = completeTable(table, options);
             if (completed.delimiterInserted && newFocus.row > 0) {
-              newFocus = newFocus!.setRow(newFocus.row + 1);
+              newFocus = newFocus.setRow(newFocus.row + 1);
             }
             const formatted = formatTable(completed.table, options);
             newFocus = newFocus.setOffset(
-              _computeNewOffset(newFocus, completed.table, formatted, false)
+              _computeNewOffset(newFocus, completed.table, formatted, false),
             );
             // apply
             const newLines = formatted.table.toLines();
@@ -1036,7 +1037,7 @@ export class TableEditor {
               range.start.row,
               range.end.row + 1,
               newLines,
-              lines
+              lines,
             );
             // update cursor position
             diff = newLines.length - lines.length;
@@ -1051,7 +1052,7 @@ export class TableEditor {
               range.start.row,
               range.end.row + 1,
               newLines,
-              lines
+              lines,
             );
             // update cursor position
             diff = newLines.length - lines.length;
@@ -1073,7 +1074,7 @@ export class TableEditor {
         const endRow = lastRow;
         const range = new Range(
           new Point(startRow, 0),
-          new Point(endRow, lines[lines.length - 1].length)
+          new Point(endRow, lines[lines.length - 1].length),
         );
         const table = readTable(lines, options);
         const focus = table.focusOfPosition(pos, startRow);
@@ -1089,7 +1090,7 @@ export class TableEditor {
         // @ts-expect-error TODO
         newFocus = newFocus.setOffset(
           // @ts-expect-error TODO
-          _computeNewOffset(newFocus, completed.table, formatted, false)
+          _computeNewOffset(newFocus, completed.table, formatted, false),
         );
         // apply
         const newLines = formatted.table.toLines();

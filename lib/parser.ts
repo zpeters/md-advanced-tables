@@ -1,20 +1,20 @@
-import { TableCell } from "./table-cell";
-import { TableRow } from "./table-row";
-import { Table } from "./table";
-import { Options } from "./options";
+import { Options } from './options';
+import { Table } from './table';
+import { TableCell } from './table-cell';
+import { TableRow } from './table-row';
 
 /**
  * Splits a text into cells.
  *
  * @private
  */
-export function _splitCells(text: string): string[] {
+export const _splitCells = (text: string): string[] => {
   const cells = [];
-  let buf = "";
+  let buf = '';
   let rest = text;
-  while (rest !== "") {
+  while (rest !== '') {
     switch (rest[0]) {
-      case "`":
+      case '`':
         // read code span
         {
           const startMatch = rest.match(/^`*/);
@@ -28,8 +28,8 @@ export function _splitCells(text: string): string[] {
           let buf1 = start;
           let rest1 = rest.substr(start.length);
           let closed = false;
-          while (rest1 !== "") {
-            if (rest1[0] === "`") {
+          while (rest1 !== '') {
+            if (rest1[0] === '`') {
               const endMatch = rest1.match(/^`*/);
               if (endMatch === null) {
                 // case statement ensures first char is a ` and we cannot get here.
@@ -52,25 +52,25 @@ export function _splitCells(text: string): string[] {
             buf += buf1;
             rest = rest1;
           } else {
-            buf += "`";
+            buf += '`';
             rest = rest.substr(1);
           }
         }
         break;
-      case "\\":
+      case '\\':
         // escape next character
         if (rest.length >= 2) {
           buf += rest.substr(0, 2);
           rest = rest.substr(2);
         } else {
-          buf += "\\";
+          buf += '\\';
           rest = rest.substr(1);
         }
         break;
-      case "|":
+      case '|':
         // flush buffer
         cells.push(buf);
-        buf = "";
+        buf = '';
         rest = rest.substr(1);
         break;
       default:
@@ -80,7 +80,7 @@ export function _splitCells(text: string): string[] {
   }
   cells.push(buf);
   return cells;
-}
+};
 
 /**
  * Reads a table row.
@@ -89,28 +89,28 @@ export function _splitCells(text: string): string[] {
  * @param text - A text.
  * @param [leftMarginRegex=/^\s*$/] - A regular expression object that matches left margin.
  */
-export function _readRow(text: string, leftMarginRegex = /^\s*$/): TableRow {
+export const _readRow = (text: string, leftMarginRegex = /^\s*$/): TableRow => {
   let cells = _splitCells(text);
   let marginLeft;
   if (cells.length > 0 && leftMarginRegex.test(cells[0])) {
     marginLeft = cells[0];
     cells = cells.slice(1);
   } else {
-    marginLeft = "";
+    marginLeft = '';
   }
   let marginRight;
   if (cells.length > 1 && /^\s*$/.test(cells[cells.length - 1])) {
     marginRight = cells[cells.length - 1];
     cells = cells.slice(0, cells.length - 1);
   } else {
-    marginRight = "";
+    marginRight = '';
   }
   return new TableRow(
     cells.map((cell) => new TableCell(cell)),
     marginLeft,
-    marginRight
+    marginRight,
   );
-}
+};
 
 /**
  * Creates a regex source string of margin character class.
@@ -120,16 +120,16 @@ export function _readRow(text: string, leftMarginRegex = /^\s*$/): TableRow {
  * A pipe `|`, a backslash `\`, and a backquote will be ignored.
  * @return A regex source string.
  */
-export function marginRegexSrc(chars: Set<string>): string {
-  let cs = "";
-  //for (const c chars.values()) {
+export const marginRegexSrc = (chars: Set<string>): string => {
+  let cs = '';
+  // for (const c chars.values()) {
   chars.forEach((c: string) => {
-    if (c !== "|" && c !== "\\" && c !== "`") {
+    if (c !== '|' && c !== '\\' && c !== '`') {
       cs += `\\u{${c.codePointAt(0)!.toString(16)}}`;
     }
   });
   return `[\\s${cs}]*`;
-}
+};
 
 /**
  * Creates a regular expression object that matches margin of tables.
@@ -139,9 +139,7 @@ export function marginRegexSrc(chars: Set<string>): string {
  * A pipe `|`, a backslash `\`, and a backquote will be ignored.
  * @return An regular expression object that matches margin of tables.
  */
-export function _marginRegex(chars: Set<string>): RegExp {
-  return new RegExp(`^${marginRegexSrc(chars)}$`, "u");
-}
+export const _marginRegex = (chars: Set<string>): RegExp => new RegExp(`^${marginRegexSrc(chars)}$`, 'u');
 
 /**
  * Reads a table from lines.
@@ -149,14 +147,9 @@ export function _marginRegex(chars: Set<string>): RegExp {
  * @private
  * @param lines - An array of texts, each text represents a row.
  * @param options - An object containing options for parsing.
- *
- * | property name     | type                              | description                                 |
- * | ----------------- | --------------------------------- | ------------------------------------------- |
- * | `leftMarginChars` | {@link Set}&lt;{@link string}&gt; | A set of additional left margin characters. |
- *
- * @returns {Table} The table red from the lines.
+ * @returns The table read from the lines.
  */
-export function readTable(lines: string[], options: Options): Table {
+export const readTable = (lines: string[], options: Options): Table => {
   const leftMarginRegex = _marginRegex(options.leftMarginChars);
   return new Table(lines.map((line) => _readRow(line, leftMarginRegex)));
-}
+};

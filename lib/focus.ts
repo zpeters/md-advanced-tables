@@ -39,7 +39,7 @@ export class Focus {
    * Checks if two focuses point the same cell.
    * Offsets are ignored.
    */
-  posEquals(focus: Focus): boolean {
+  public posEquals(focus: Focus): boolean {
     return this.row === focus.row && this.column === focus.column;
   }
 
@@ -49,7 +49,7 @@ export class Focus {
    * @param row - Row of the focused cell.
    * @returns A new focus object with the specified row.
    */
-  setRow(row: number): Focus {
+  public setRow(row: number): Focus {
     return new Focus(row, this.column, this.offset);
   }
 
@@ -59,7 +59,7 @@ export class Focus {
    * @param column - Column of the focused cell.
    * @returns A new focus object with the specified column.
    */
-  setColumn(column: number): Focus {
+  public setColumn(column: number): Focus {
     return new Focus(this.row, column, this.offset);
   }
 
@@ -69,7 +69,7 @@ export class Focus {
    * @param offset - Offset in the focused cell.
    * @returns A new focus object with the specified offset.
    */
-  setOffset(offset: number): Focus {
+  public setOffset(offset: number): Focus {
     return new Focus(this.row, this.column, offset);
   }
 }

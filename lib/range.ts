@@ -1,4 +1,4 @@
-import { Point } from "./point";
+import { Point } from './point';
 
 /**
  * A `Range` object represents a range in the text editor.

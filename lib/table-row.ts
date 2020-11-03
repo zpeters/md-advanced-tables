@@ -1,4 +1,4 @@
-import { TableCell } from "./table-cell";
+import { TableCell } from './table-cell';
 
 /**
  * A `TableRow` object represents a table row.
@@ -6,8 +6,6 @@ import { TableCell } from "./table-cell";
  * @private
  */
 export class TableRow {
-  private _cells: TableCell[];
-
   /**
    * Margin string at the left of the row.
    */
@@ -17,6 +15,8 @@ export class TableRow {
    * Margin string at the right of the row.
    */
   public readonly marginRight: string;
+
+  private readonly _cells: TableCell[];
 
   /**
    * Creates a new `TableRow` objec.
@@ -34,37 +34,36 @@ export class TableRow {
   /**
    * Gets the number of the cells in the row.
    */
-  getWidth(): number {
+  public getWidth(): number {
     return this._cells.length;
   }
 
   /**
    * Returns the cells that the row contains.
    */
-  getCells(): TableCell[] {
+  public getCells(): TableCell[] {
     return this._cells.slice();
   }
 
   /**
    * Gets a cell at the specified index.
    *
-   * @param {number} index - Index.
+   * @param index - Index.
    * @returns The cell at the specified index if exists; `undefined` if no cell is found.
    */
-  getCellAt(index: number): TableCell | undefined {
+  public getCellAt(index: number): TableCell | undefined {
     return this._cells[index];
   }
 
   /**
    * Convers the row to a text representation.
    */
-  toText(): string {
+  public toText(): string {
     if (this._cells.length === 0) {
       return this.marginLeft;
-    } else {
-      const cells = this._cells.map((cell) => cell.toText()).join("|");
-      return `${this.marginLeft}|${cells}|${this.marginRight}`;
     }
+    const cells = this._cells.map((cell) => cell.toText()).join('|');
+    return `${this.marginLeft}|${cells}|${this.marginRight}`;
   }
 
   /**
@@ -72,7 +71,7 @@ export class TableRow {
    *
    * @returns `true` if the row is a delimiter i.e. all the cells contained are delimiters.
    */
-  isDelimiter(): boolean {
+  public isDelimiter(): boolean {
     return this._cells.every((cell) => cell.isDelimiter());
   }
 }
