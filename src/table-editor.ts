@@ -211,6 +211,35 @@ export class TableEditor {
   }
 
   /**
+   * Finds a table, completes it, then does an operation with it.
+   *
+   * @param func - A function that does some operation on table information obtained by
+   * {@link TableEditor#_findTable}.
+   */
+  private withCompletedTable(
+    options: Options,
+    func: (tableInfo: TableInfo) => void,
+  ): void {
+    this._withTable(options, (tableInfo: TableInfo) => {
+      let newFocus = tableInfo.focus;
+      // complete
+      const completed = completeTable(tableInfo.table, options);
+      if (completed.delimiterInserted && newFocus.row > 0) {
+        newFocus = newFocus.setRow(newFocus.row + 1);
+      }
+      // format
+      const formatted = formatTable(completed.table, options);
+      newFocus = newFocus.setOffset(
+        _computeNewOffset(newFocus, completed.table, formatted, false),
+      );
+
+      tableInfo.table = formatted.table;
+      tableInfo.focus = newFocus;
+      func(tableInfo);
+    });
+  }
+
+  /**
    * Updates lines in a given range in the text editor.
    *
    * @private
@@ -275,29 +304,22 @@ export class TableEditor {
    * Formats the table under the cursor.
    */
   public format(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // format
-      const formatted = formatTable(completed.table, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-    });
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, table, newFocus);
+        });
+      },
+    );
   }
 
   /**
@@ -342,71 +364,57 @@ export class TableEditor {
    * Alters the alignment of the focused column.
    */
   public alignColumn(alignment: Alignment, options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // alter alignment
-      let altered = completed.table;
-      if (
-        0 <= newFocus.column &&
-        newFocus.column <= altered.getHeaderWidth() - 1
-      ) {
-        altered = alterAlignment(
-          completed.table,
-          newFocus.column,
-          alignment,
-          options,
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // alter alignment
+        let altered = table;
+        if (
+          0 <= newFocus.column &&
+          newFocus.column <= altered.getHeaderWidth() - 1
+        ) {
+          altered = alterAlignment(table, newFocus.column, alignment, options);
+        }
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, table, formatted, false),
         );
-      }
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        });
+      },
+    );
   }
 
   /**
    * Selects the focused cell content.
    */
   public selectCell(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // format
-      const formatted = formatTable(completed.table, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
-        this._selectFocus(range.start.row, formatted.table, newFocus);
-      });
-    });
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            table.toLines(),
+            lines,
+          );
+          this._selectFocus(range.start.row, table, newFocus);
+        });
+      },
+    );
   }
 
   /**
@@ -420,66 +428,64 @@ export class TableEditor {
     columnOffset: number,
     options: Options,
   ): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      const startFocus = newFocus;
-      // move focus
-      if (rowOffset !== 0) {
-        const height = completed.table.getHeight();
-        // skip delimiter row
-        const skip =
-          newFocus.row < 1 && newFocus.row + rowOffset >= 1
-            ? 1
-            : newFocus.row > 1 && newFocus.row + rowOffset <= 1
-            ? -1
-            : 0;
-        newFocus = newFocus.setRow(
-          Math.min(
-            Math.max(newFocus.row + rowOffset + skip, 0),
-            height <= 2 ? 0 : height - 1,
-          ),
-        );
-      }
-      if (columnOffset !== 0) {
-        const width = completed.table.getHeaderWidth();
-        if (
-          !(newFocus.column < 0 && columnOffset < 0) &&
-          !(newFocus.column > width - 1 && columnOffset > 0)
-        ) {
-          newFocus = newFocus.setColumn(
-            Math.min(Math.max(newFocus.column + columnOffset, 0), width - 1),
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        const startFocus = newFocus;
+        // move focus
+        if (rowOffset !== 0) {
+          const height = table.getHeight();
+          // skip delimiter row
+          const skip =
+            newFocus.row < 1 && newFocus.row + rowOffset >= 1
+              ? 1
+              : newFocus.row > 1 && newFocus.row + rowOffset <= 1
+              ? -1
+              : 0;
+          newFocus = newFocus.setRow(
+            Math.min(
+              Math.max(newFocus.row + rowOffset + skip, 0),
+              height <= 2 ? 0 : height - 1,
+            ),
           );
         }
-      }
-      const moved = !newFocus.posEquals(startFocus);
-      // format
-      const formatted = formatTable(completed.table, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, moved),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
-        if (moved) {
-          this._selectFocus(range.start.row, formatted.table, newFocus);
-        } else {
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        if (columnOffset !== 0) {
+          const width = table.getHeaderWidth();
+          if (
+            !(newFocus.column < 0 && columnOffset < 0) &&
+            !(newFocus.column > width - 1 && columnOffset > 0)
+          ) {
+            newFocus = newFocus.setColumn(
+              Math.min(Math.max(newFocus.column + columnOffset, 0), width - 1),
+            );
+          }
         }
-      });
-      if (moved) {
-        this.resetSmartCursor();
-      }
-    });
+        const moved = !newFocus.posEquals(startFocus);
+        // format
+        const formatted = formatTable(table, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, table, formatted, moved),
+        );
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          if (moved) {
+            this._selectFocus(range.start.row, formatted.table, newFocus);
+          } else {
+            this._moveToFocus(range.start.row, formatted.table, newFocus);
+          }
+        });
+        if (moved) {
+          this.resetSmartCursor();
+        }
+      },
+    );
   }
 
   /**
@@ -584,60 +590,54 @@ export class TableEditor {
    * Moves the focus to the previous cell.
    */
   public previousCell(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      const startFocus = newFocus;
-      // move focus
-      if (newFocus.row === 0) {
-        if (newFocus.column > 0) {
-          newFocus = newFocus.setColumn(newFocus.column - 1);
-        }
-      } else if (newFocus.row === 1) {
-        newFocus = new Focus(
-          0,
-          completed.table.getHeaderWidth() - 1,
-          newFocus.offset,
-        );
-      } else {
-        if (newFocus.column > 0) {
-          newFocus = newFocus.setColumn(newFocus.column - 1);
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        const startFocus = newFocus;
+        // move focus
+        if (newFocus.row === 0) {
+          if (newFocus.column > 0) {
+            newFocus = newFocus.setColumn(newFocus.column - 1);
+          }
+        } else if (newFocus.row === 1) {
+          newFocus = new Focus(0, table.getHeaderWidth() - 1, newFocus.offset);
         } else {
-          newFocus = new Focus(
-            newFocus.row === 2 ? 0 : newFocus.row - 1,
-            completed.table.getHeaderWidth() - 1,
-            newFocus.offset,
+          if (newFocus.column > 0) {
+            newFocus = newFocus.setColumn(newFocus.column - 1);
+          } else {
+            newFocus = new Focus(
+              newFocus.row === 2 ? 0 : newFocus.row - 1,
+              table.getHeaderWidth() - 1,
+              newFocus.offset,
+            );
+          }
+        }
+        const moved = !newFocus.posEquals(startFocus);
+        // format
+        const formatted = formatTable(table, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, table, formatted, moved),
+        );
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
           );
-        }
-      }
-      const moved = !newFocus.posEquals(startFocus);
-      // format
-      const formatted = formatTable(completed.table, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, moved),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
+          if (moved) {
+            this._selectFocus(range.start.row, formatted.table, newFocus);
+          } else {
+            this._moveToFocus(range.start.row, formatted.table, newFocus);
+          }
+        });
         if (moved) {
-          this._selectFocus(range.start.row, formatted.table, newFocus);
-        } else {
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
+          this.resetSmartCursor();
         }
-      });
-      if (moved) {
-        this.resetSmartCursor();
-      }
-    });
+      },
+    );
   }
 
   /**
@@ -727,88 +727,84 @@ export class TableEditor {
    * Inserts an empty row at the current focus.
    */
   public insertRow(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // move focus
-      if (newFocus.row <= 1) {
-        newFocus = newFocus.setRow(2);
-      }
-      newFocus = newFocus.setColumn(0);
-      // insert an empty row
-      const row = new Array(completed.table.getHeaderWidth()).fill(
-        new TableCell(''),
-      );
-      const altered = insertRow(
-        completed.table,
-        newFocus.row,
-        new TableRow(row, '', ''),
-      );
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, true),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // move focus
+        if (newFocus.row <= 1) {
+          newFocus = newFocus.setRow(2);
+        }
+        newFocus = newFocus.setColumn(0);
+        // insert an empty row
+        const row = new Array(table.getHeaderWidth()).fill(new TableCell(''));
+        const altered = insertRow(
+          table,
+          newFocus.row,
+          new TableRow(row, '', ''),
         );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-      this.resetSmartCursor();
-    });
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, altered, formatted, true),
+        );
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
    * Deletes a row at the current focus.
    */
   public deleteRow(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // delete a row
-      let altered = completed.table;
-      let moved = false;
-      if (newFocus.row !== 1) {
-        altered = deleteRow(altered, newFocus.row);
-        moved = true;
-        if (newFocus.row > altered.getHeight() - 1) {
-          newFocus = newFocus.setRow(newFocus.row === 2 ? 0 : newFocus.row - 1);
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // delete a row
+        let altered = table;
+        let moved = false;
+        if (newFocus.row !== 1) {
+          altered = deleteRow(altered, newFocus.row);
+          moved = true;
+          if (newFocus.row > altered.getHeight() - 1) {
+            newFocus = newFocus.setRow(
+              newFocus.row === 2 ? 0 : newFocus.row - 1,
+            );
+          }
         }
-      }
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, moved),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, altered, formatted, moved),
         );
-        if (moved) {
-          this._selectFocus(range.start.row, formatted.table, newFocus);
-        } else {
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        }
-      });
-      this.resetSmartCursor();
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          if (moved) {
+            this._selectFocus(range.start.row, formatted.table, newFocus);
+          } else {
+            this._moveToFocus(range.start.row, formatted.table, newFocus);
+          }
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
@@ -817,202 +813,187 @@ export class TableEditor {
    * @param offset - An offset the row is moved by.
    */
   public moveRow(offset: number, options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // move row
-      let altered = completed.table;
-      if (newFocus.row > 1) {
-        const dest = Math.min(
-          Math.max(newFocus.row + offset, 2),
-          altered.getHeight() - 1,
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // move row
+        let altered = table;
+        if (newFocus.row > 1) {
+          const dest = Math.min(
+            Math.max(newFocus.row + offset, 2),
+            altered.getHeight() - 1,
+          );
+          altered = moveRow(altered, newFocus.row, dest);
+          newFocus = newFocus.setRow(dest);
+        }
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, altered, formatted, false),
         );
-        altered = moveRow(altered, newFocus.row, dest);
-        newFocus = newFocus.setRow(dest);
-      }
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, false),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-      this.resetSmartCursor();
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
    * Sorts rows alphanumerically using the column at the current focus.
    */
   public sortRows(sortOrder: SortOrder, options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
 
-      const bodyRows = completed.table.getRows().slice(2);
-      bodyRows.sort((rowA, rowB): number => {
-        const cellA = rowA.getCellAt(newFocus.column);
-        const cellB = rowB.getCellAt(newFocus.column);
+        const bodyRows = table.getRows().slice(2);
+        bodyRows.sort((rowA, rowB): number => {
+          const cellA = rowA.getCellAt(newFocus.column);
+          const cellB = rowB.getCellAt(newFocus.column);
 
-        if (cellA === undefined) {
-          if (cellB === undefined) {
-            return 0;
+          if (cellA === undefined) {
+            if (cellB === undefined) {
+              return 0;
+            }
+            return -1;
+          } else if (cellB === undefined) {
+            return 1;
           }
-          return -1;
-        } else if (cellB === undefined) {
-          return 1;
+
+          const contentA = cellA.content;
+          const contentB = cellB.content;
+
+          if (contentA === contentB) {
+            return 0;
+          } else if (contentA === undefined) {
+            return -1;
+          } else if (contentB === undefined) {
+            return 1;
+          } else {
+            return contentA < contentB ? -1 : 1;
+          }
+        });
+        if (sortOrder === SortOrder.Descending) {
+          bodyRows.reverse();
         }
+        const allRows = table.getRows().slice(0, 2).concat(bodyRows);
+        const newTable = new Table(allRows);
 
-        const contentA = cellA.content;
-        const contentB = cellB.content;
-
-        if (contentA === contentB) {
-          return 0;
-        } else if (contentA === undefined) {
-          return -1;
-        } else if (contentB === undefined) {
-          return 1;
-        } else {
-          return contentA < contentB ? -1 : 1;
-        }
-      });
-      if (sortOrder === SortOrder.Descending) {
-        bodyRows.reverse();
-      }
-      const allRows = completed.table.getRows().slice(0, 2).concat(bodyRows);
-      const newTable = new Table(allRows);
-
-      // format
-      const formatted = formatTable(newTable, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, newTable, formatted, true),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
+        // format
+        const formatted = formatTable(newTable, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, newTable, formatted, true),
         );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-      this.resetSmartCursor();
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
    * Inserts an empty column at the current focus.
    */
   public insertColumn(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // move focus
-      if (newFocus.row === 1) {
-        newFocus = newFocus.setRow(0);
-      }
-      if (newFocus.column < 0) {
-        newFocus = newFocus.setColumn(0);
-      }
-      // insert an empty column
-      const column = new Array(completed.table.getHeight() - 1).fill(
-        new TableCell(''),
-      );
-      const altered = insertColumn(
-        completed.table,
-        newFocus.column,
-        column,
-        options,
-      );
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, true),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // move focus
+        if (newFocus.row === 1) {
+          newFocus = newFocus.setRow(0);
+        }
+        if (newFocus.column < 0) {
+          newFocus = newFocus.setColumn(0);
+        }
+        // insert an empty column
+        const column = new Array(table.getHeight() - 1).fill(new TableCell(''));
+        const altered = insertColumn(table, newFocus.column, column, options);
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, altered, formatted, true),
         );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-      this.resetSmartCursor();
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
    * Deletes a column at the current focus.
    */
   public deleteColumn(options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // move focus
-      if (newFocus.row === 1) {
-        newFocus = newFocus.setRow(0);
-      }
-      // delete a column
-      let altered = completed.table;
-      let moved = false;
-      if (
-        0 <= newFocus.column &&
-        newFocus.column <= altered.getHeaderWidth() - 1
-      ) {
-        altered = deleteColumn(completed.table, newFocus.column, options);
-        moved = true;
-        if (newFocus.column > altered.getHeaderWidth() - 1) {
-          newFocus = newFocus.setColumn(altered.getHeaderWidth() - 1);
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // move focus
+        if (newFocus.row === 1) {
+          newFocus = newFocus.setRow(0);
         }
-      }
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, moved),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
+        // delete a column
+        let altered = table;
+        let moved = false;
+        if (
+          0 <= newFocus.column &&
+          newFocus.column <= altered.getHeaderWidth() - 1
+        ) {
+          altered = deleteColumn(table, newFocus.column, options);
+          moved = true;
+          if (newFocus.column > altered.getHeaderWidth() - 1) {
+            newFocus = newFocus.setColumn(altered.getHeaderWidth() - 1);
+          }
+        }
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, altered, formatted, moved),
         );
-        if (moved) {
-          this._selectFocus(range.start.row, formatted.table, newFocus);
-        } else {
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        }
-      });
-      this.resetSmartCursor();
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          if (moved) {
+            this._selectFocus(range.start.row, formatted.table, newFocus);
+          } else {
+            this._moveToFocus(range.start.row, formatted.table, newFocus);
+          }
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
@@ -1021,43 +1002,41 @@ export class TableEditor {
    * @param offset - An offset the column is moved by.
    */
   public moveColumn(offset: number, options: Options): void {
-    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
-      let newFocus = focus;
-      // complete
-      const completed = completeTable(table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // move column
-      let altered = completed.table;
-      if (
-        0 <= newFocus.column &&
-        newFocus.column <= altered.getHeaderWidth() - 1
-      ) {
-        const dest = Math.min(
-          Math.max(newFocus.column + offset, 0),
-          altered.getHeaderWidth() - 1,
+    this.withCompletedTable(
+      options,
+      ({ range, lines, table, focus }: TableInfo) => {
+        let newFocus = focus;
+        // move column
+        let altered = table;
+        if (
+          0 <= newFocus.column &&
+          newFocus.column <= altered.getHeaderWidth() - 1
+        ) {
+          const dest = Math.min(
+            Math.max(newFocus.column + offset, 0),
+            altered.getHeaderWidth() - 1,
+          );
+          altered = moveColumn(altered, newFocus.column, dest);
+          newFocus = newFocus.setColumn(dest);
+        }
+        // format
+        const formatted = formatTable(altered, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, altered, formatted, false),
         );
-        altered = moveColumn(altered, newFocus.column, dest);
-        newFocus = newFocus.setColumn(dest);
-      }
-      // format
-      const formatted = formatTable(altered, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, altered, formatted, false),
-      );
-      // apply
-      this._textEditor.transact(() => {
-        this._updateLines(
-          range.start.row,
-          range.end.row + 1,
-          formatted.table.toLines(),
-          lines,
-        );
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      });
-      this.resetSmartCursor();
-    });
+        // apply
+        this._textEditor.transact(() => {
+          this._updateLines(
+            range.start.row,
+            range.end.row + 1,
+            formatted.table.toLines(),
+            lines,
+          );
+          this._moveToFocus(range.start.row, formatted.table, newFocus);
+        });
+        this.resetSmartCursor();
+      },
+    );
   }
 
   /**
