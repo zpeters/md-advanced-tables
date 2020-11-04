@@ -1,8 +1,8 @@
 /**
  * A `Focus` object represents which cell is focused in the table.
  *
- * Note that `row` and `column` properties specifiy a cell's position in the table, not the cursor's
- * position in the text editor as {@link Point} class.
+ * Note that `row` and `column` properties specifiy a cell's position in the
+ * table, not the cursor's position in the text editor as {@link Point} class.
  *
  * @private
  */
