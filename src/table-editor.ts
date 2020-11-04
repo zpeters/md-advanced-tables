@@ -240,6 +240,47 @@ export class TableEditor {
   }
 
   /**
+   * Formats the table and applies any changes based on the difference between
+   * originalLines and the newTable. Should generally be the last function call
+   * in a TableEditor function.
+   */
+  private formatAndApply(
+    options: Options,
+    range: Range,
+    originalLines: string[],
+    newTable: Table,
+    newFocus: Focus,
+    moved = false,
+  ): TableInfo {
+    // format
+    const formatted = formatTable(newTable, options);
+    newFocus = newFocus.setOffset(
+      _computeNewOffset(newFocus, newTable, formatted, moved),
+    );
+    // apply
+    this._textEditor.transact(() => {
+      this._updateLines(
+        range.start.row,
+        range.end.row + 1,
+        formatted.table.toLines(),
+        originalLines,
+      );
+      if (moved) {
+        this._selectFocus(range.start.row, formatted.table, newFocus);
+      } else {
+        this._moveToFocus(range.start.row, formatted.table, newFocus);
+      }
+    });
+    this.resetSmartCursor();
+    return {
+      range,
+      lines: originalLines,
+      table: formatted.table,
+      focus: newFocus,
+    };
+  }
+
+  /**
    * Updates lines in a given range in the text editor.
    *
    * @private
@@ -743,22 +784,8 @@ export class TableEditor {
           newFocus.row,
           new TableRow(row, '', ''),
         );
-        // format
-        const formatted = formatTable(altered, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, altered, formatted, true),
-        );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        });
-        this.resetSmartCursor();
+
+        this.formatAndApply(options, range, lines, altered, newFocus);
       },
     );
   }
@@ -783,26 +810,8 @@ export class TableEditor {
             );
           }
         }
-        // format
-        const formatted = formatTable(altered, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, altered, formatted, moved),
-        );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          if (moved) {
-            this._selectFocus(range.start.row, formatted.table, newFocus);
-          } else {
-            this._moveToFocus(range.start.row, formatted.table, newFocus);
-          }
-        });
-        this.resetSmartCursor();
+
+        this.formatAndApply(options, range, lines, altered, newFocus, moved);
       },
     );
   }
@@ -827,22 +836,8 @@ export class TableEditor {
           altered = moveRow(altered, newFocus.row, dest);
           newFocus = newFocus.setRow(dest);
         }
-        // format
-        const formatted = formatTable(altered, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, altered, formatted, false),
-        );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        });
-        this.resetSmartCursor();
+
+        this.formatAndApply(options, range, lines, altered, newFocus);
       },
     );
   }
@@ -854,12 +849,10 @@ export class TableEditor {
     this.withCompletedTable(
       options,
       ({ range, lines, table, focus }: TableInfo) => {
-        let newFocus = focus;
-
         const bodyRows = table.getRows().slice(2);
         bodyRows.sort((rowA, rowB): number => {
-          const cellA = rowA.getCellAt(newFocus.column);
-          const cellB = rowB.getCellAt(newFocus.column);
+          const cellA = rowA.getCellAt(focus.column);
+          const cellB = rowB.getCellAt(focus.column);
 
           if (cellA === undefined) {
             if (cellB === undefined) {
@@ -889,22 +882,15 @@ export class TableEditor {
         const allRows = table.getRows().slice(0, 2).concat(bodyRows);
         const newTable = new Table(allRows);
 
-        // format
-        const formatted = formatTable(newTable, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, newTable, formatted, true),
+        const { table: formattedTable, focus: newFocus } = this.formatAndApply(
+          options,
+          range,
+          lines,
+          newTable,
+          focus,
+          true,
         );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        });
-        this.resetSmartCursor();
+        this._moveToFocus(range.start.row, formattedTable, newFocus);
       },
     );
   }
@@ -927,22 +913,8 @@ export class TableEditor {
         // insert an empty column
         const column = new Array(table.getHeight() - 1).fill(new TableCell(''));
         const altered = insertColumn(table, newFocus.column, column, options);
-        // format
-        const formatted = formatTable(altered, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, altered, formatted, true),
-        );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        });
-        this.resetSmartCursor();
+
+        this.formatAndApply(options, range, lines, altered, newFocus);
       },
     );
   }
@@ -972,26 +944,8 @@ export class TableEditor {
             newFocus = newFocus.setColumn(altered.getHeaderWidth() - 1);
           }
         }
-        // format
-        const formatted = formatTable(altered, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, altered, formatted, moved),
-        );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          if (moved) {
-            this._selectFocus(range.start.row, formatted.table, newFocus);
-          } else {
-            this._moveToFocus(range.start.row, formatted.table, newFocus);
-          }
-        });
-        this.resetSmartCursor();
+
+        this.formatAndApply(options, range, lines, altered, newFocus, moved);
       },
     );
   }
@@ -1019,22 +973,8 @@ export class TableEditor {
           altered = moveColumn(altered, newFocus.column, dest);
           newFocus = newFocus.setColumn(dest);
         }
-        // format
-        const formatted = formatTable(altered, options);
-        newFocus = newFocus.setOffset(
-          _computeNewOffset(newFocus, altered, formatted, false),
-        );
-        // apply
-        this._textEditor.transact(() => {
-          this._updateLines(
-            range.start.row,
-            range.end.row + 1,
-            formatted.table.toLines(),
-            lines,
-          );
-          this._moveToFocus(range.start.row, formatted.table, newFocus);
-        });
-        this.resetSmartCursor();
+
+        this.formatAndApply(options, range, lines, altered, newFocus);
       },
     );
   }
