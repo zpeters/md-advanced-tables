@@ -26,4 +26,4 @@ export {
 } from './edit-script';
 export { ITextEditor } from './text-editor';
 export { Options, defaultOptions, optionsWithDefaults } from './options';
-export { TableEditor } from './table-editor';
+export { TableEditor, SortOrder } from './table-editor';

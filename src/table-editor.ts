@@ -22,6 +22,11 @@ import { TableCell } from './table-cell';
 import { TableRow } from './table-row';
 import { ITextEditor } from './text-editor';
 
+export enum SortOrder {
+  Ascending = 'ascending',
+  Descending = 'descending',
+}
+
 /**
  * Creates a regular expression object that matches a table row.
  *
@@ -833,6 +838,70 @@ export class TableEditor {
       const formatted = formatTable(altered, options);
       newFocus = newFocus.setOffset(
         _computeNewOffset(newFocus, altered, formatted, false),
+      );
+      // apply
+      this._textEditor.transact(() => {
+        this._updateLines(
+          range.start.row,
+          range.end.row + 1,
+          formatted.table.toLines(),
+          lines,
+        );
+        this._moveToFocus(range.start.row, formatted.table, newFocus);
+      });
+      this.resetSmartCursor();
+    });
+  }
+
+  /**
+   * Sorts rows alphanumerically using the column at the current focus.
+   */
+  public sortRows(sortOrder: SortOrder, options: Options): void {
+    this._withTable(options, ({ range, lines, table, focus }: TableInfo) => {
+      let newFocus = focus;
+      // complete
+      const completed = completeTable(table, options);
+      if (completed.delimiterInserted && newFocus.row > 0) {
+        newFocus = newFocus.setRow(newFocus.row + 1);
+      }
+
+      const bodyRows = completed.table.getRows().slice(2);
+      bodyRows.sort((rowA, rowB): number => {
+        const cellA = rowA.getCellAt(newFocus.column);
+        const cellB = rowB.getCellAt(newFocus.column);
+
+        if (cellA === undefined) {
+          if (cellB === undefined) {
+            return 0;
+          }
+          return -1;
+        } else if (cellB === undefined) {
+          return 1;
+        }
+
+        const contentA = cellA.content;
+        const contentB = cellB.content;
+
+        if (contentA === contentB) {
+          return 0;
+        } else if (contentA === undefined) {
+          return -1;
+        } else if (contentB === undefined) {
+          return 1;
+        } else {
+          return contentA < contentB ? -1 : 1;
+        }
+      });
+      if (sortOrder === SortOrder.Descending) {
+        bodyRows.reverse();
+      }
+      const allRows = completed.table.getRows().slice(0, 2).concat(bodyRows);
+      const newTable = new Table(allRows);
+
+      // format
+      const formatted = formatTable(newTable, options);
+      newFocus = newFocus.setOffset(
+        _computeNewOffset(newFocus, newTable, formatted, true),
       );
       // apply
       this._textEditor.transact(() => {

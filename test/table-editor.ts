@@ -10,6 +10,7 @@ import {
   _computeNewOffset,
   _createIsTableRowRegex,
   TableEditor,
+  SortOrder,
 } from '../src/table-editor';
 import { TextEditor } from './text-editor-mock';
 import { assert, expect } from 'chai';
@@ -4451,6 +4452,122 @@ describe('TableEditor', () => {
           '| --- | --- |',
           '| E   | F   |',
           '| C   | D   |',
+          'bar',
+        ]);
+      }
+    });
+  });
+
+  /**
+   * @test {TableEditor#sortRows}
+   */
+  describe('#sortRows(sortOrder)', () => {
+    it('should reorder rows as requested', () => {
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(3, 3));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Ascending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(3);
+        expect(pos.column).to.equal(2);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(3, 3));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Descending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(3);
+        expect(pos.column).to.equal(2);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| 1   | 6   |',
+          '| C   | D   |',
+          '| 5   | 3   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(4, 10));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Ascending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(4);
+        expect(pos.column).to.equal(8);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| 5   | 3   |',
+          '| 1   | 6   |',
+          '| C   | D   |',
+          '| E   | F   |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| 1   | 6   |',
+          '| C   | D   |',
+          '| 5   | 3   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(4, 10));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Descending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(4);
+        expect(pos.column).to.equal(8);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          '| 1   | 6   |',
+          '| 5   | 3   |',
           'bar',
         ]);
       }
