@@ -37,6 +37,10 @@ export enum SortOrder {
 export const _createIsTableRowRegex = (leftMarginChars: Set<string>): RegExp =>
   new RegExp(`^${marginRegexSrc(leftMarginChars)}\\|`, 'u');
 
+export const _createIsTableFormulaRegex = (
+  leftMarginChars: Set<string>,
+): RegExp => new RegExp(`^${marginRegexSrc(leftMarginChars)}<!-- ?.+-->$`, 'u');
+
 interface TableInfo {
   /**
    * The range of the table
@@ -47,6 +51,11 @@ interface TableInfo {
    * An array of lines in the range.
    */
   lines: string[];
+
+  /**
+   * An array of formula lines after the range.
+   */
+  formulaLines: string[];
 
   /**
    * A table object read from the text editor.
@@ -151,11 +160,13 @@ export class TableEditor {
    */
   _findTable(options: Options): TableInfo | undefined {
     const re = _createIsTableRowRegex(options.leftMarginChars);
+    const formulaRe = _createIsTableFormulaRegex(options.leftMarginChars);
     const pos = this._textEditor.getCursorPosition();
     const lastRow = this._textEditor.getLastRow();
     const lines = [];
+    const formulaLines = [];
     let startRow = pos.row;
-    let endRow = pos.row;
+    let endRow = pos.row; // endRow is last line before fomulas
     // current line
     {
       const line = this._textEditor.getLine(pos.row);
@@ -182,6 +193,14 @@ export class TableEditor {
       lines.push(line);
       endRow = row;
     }
+    // formula lines
+    for (let row = endRow + 1; row <= lastRow; row++) {
+      const line = this._textEditor.getLine(row);
+      if (!this._textEditor.acceptsTableEdit(row) || !formulaRe.test(line)) {
+        break;
+      }
+      formulaLines.push(line);
+    }
     const range = new Range(
       new Point(startRow, 0),
       new Point(endRow, lines[lines.length - 1].length),
@@ -192,7 +211,7 @@ export class TableEditor {
       // TODO: Validate this for correctness
       return undefined;
     }
-    return { range, lines, table, focus };
+    return { range, lines, formulaLines, table, focus };
   }
 
   /**
@@ -248,6 +267,7 @@ export class TableEditor {
     options: Options,
     range: Range,
     originalLines: string[],
+    formulaLines: string[],
     newTable: Table,
     newFocus: Focus,
     moved = false,
@@ -275,6 +295,7 @@ export class TableEditor {
     return {
       range,
       lines: originalLines,
+      formulaLines: formulaLines,
       table: formatted.table,
       focus: newFocus,
     };
@@ -770,7 +791,7 @@ export class TableEditor {
   public insertRow(options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         let newFocus = focus;
         // move focus
         if (newFocus.row <= 1) {
@@ -785,7 +806,14 @@ export class TableEditor {
           new TableRow(row, '', ''),
         );
 
-        this.formatAndApply(options, range, lines, altered, newFocus);
+        this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          altered,
+          newFocus,
+        );
       },
     );
   }
@@ -796,7 +824,7 @@ export class TableEditor {
   public deleteRow(options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         let newFocus = focus;
         // delete a row
         let altered = table;
@@ -811,7 +839,15 @@ export class TableEditor {
           }
         }
 
-        this.formatAndApply(options, range, lines, altered, newFocus, moved);
+        this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          altered,
+          newFocus,
+          moved,
+        );
       },
     );
   }
@@ -824,7 +860,7 @@ export class TableEditor {
   public moveRow(offset: number, options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         let newFocus = focus;
         // move row
         let altered = table;
@@ -837,7 +873,14 @@ export class TableEditor {
           newFocus = newFocus.setRow(dest);
         }
 
-        this.formatAndApply(options, range, lines, altered, newFocus);
+        this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          altered,
+          newFocus,
+        );
       },
     );
   }
@@ -848,7 +891,7 @@ export class TableEditor {
   public sortRows(sortOrder: SortOrder, options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         const bodyRows = table.getRows().slice(2);
         bodyRows.sort((rowA, rowB): number => {
           const cellA = rowA.getCellAt(focus.column);
@@ -886,6 +929,7 @@ export class TableEditor {
           options,
           range,
           lines,
+          formulaLines,
           newTable,
           focus,
           true,
@@ -901,7 +945,7 @@ export class TableEditor {
   public insertColumn(options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         let newFocus = focus;
         // move focus
         if (newFocus.row === 1) {
@@ -914,7 +958,14 @@ export class TableEditor {
         const column = new Array(table.getHeight() - 1).fill(new TableCell(''));
         const altered = insertColumn(table, newFocus.column, column, options);
 
-        this.formatAndApply(options, range, lines, altered, newFocus);
+        this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          altered,
+          newFocus,
+        );
       },
     );
   }
@@ -925,7 +976,7 @@ export class TableEditor {
   public deleteColumn(options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         let newFocus = focus;
         // move focus
         if (newFocus.row === 1) {
@@ -945,7 +996,15 @@ export class TableEditor {
           }
         }
 
-        this.formatAndApply(options, range, lines, altered, newFocus, moved);
+        this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          altered,
+          newFocus,
+          moved,
+        );
       },
     );
   }
@@ -958,7 +1017,7 @@ export class TableEditor {
   public moveColumn(offset: number, options: Options): void {
     this.withCompletedTable(
       options,
-      ({ range, lines, table, focus }: TableInfo) => {
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         let newFocus = focus;
         // move column
         let altered = table;
@@ -974,7 +1033,14 @@ export class TableEditor {
           newFocus = newFocus.setColumn(dest);
         }
 
-        this.formatAndApply(options, range, lines, altered, newFocus);
+        this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          altered,
+          newFocus,
+        );
       },
     );
   }

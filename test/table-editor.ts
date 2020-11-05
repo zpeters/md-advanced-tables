@@ -11,6 +11,7 @@ import {
   _createIsTableRowRegex,
   TableEditor,
   SortOrder,
+  _createIsTableFormulaRegex,
 } from '../src/table-editor';
 import { TextEditor } from './text-editor-mock';
 import { assert, expect } from 'chai';
@@ -59,6 +60,42 @@ describe('_createIsTableRowRegex(leftMarginChars)', () => {
     expect(re.test(' * |foo')).to.be.true;
     expect(re.test(' \\|foo')).to.be.false;
     expect(re.test(' ` |foo')).to.be.false;
+  });
+});
+
+/**
+ * @test {_createIsTableFormulaRegex}
+ */
+describe('_createIsTableFormulaRegex(leftMarginChars)', () => {
+  it('should return a regular expression object that matches a table formula', () => {
+    {
+      const re = _createIsTableFormulaRegex(new Set());
+      expect(re.test('|')).to.be.false;
+      expect(re.test('|foo')).to.be.false;
+      expect(re.test('<!-- TBFM: @2$4=vmean($2..$3) -->')).to.be.true;
+      expect(re.test('<!-- TBFM: $4=vmean($2..$3) -->')).to.be.true;
+      expect(re.test('<!--TBFM: $4=vmean($2..$3)-->')).to.be.true;
+      expect(re.test(' \t<!-- TBFM: @2$4=vmean($2..$3) -->')).to.be.true;
+      expect(re.test('')).to.be.false;
+      expect(re.test(' \t')).to.be.false;
+      expect(re.test('TBFM: @2$4=vmean($2..$3)')).to.be.false;
+      expect(re.test('\tTBFM: @2$4=vmean($2..$3)')).to.be.false;
+      expect(re.test(' * <!--TBFM: $4=vmean($2..$3)-->')).to.be.false;
+    }
+    {
+      const re = _createIsTableFormulaRegex(new Set('*'));
+      expect(re.test('|')).to.be.false;
+      expect(re.test('|foo')).to.be.false;
+      expect(re.test('<!-- TBFM: @2$4=vmean($2..$3) -->')).to.be.true;
+      expect(re.test('<!-- TBFM: $4=vmean($2..$3) -->')).to.be.true;
+      expect(re.test('<!--TBFM: $4=vmean($2..$3)-->')).to.be.true;
+      expect(re.test(' \t<!-- TBFM: @2$4=vmean($2..$3) -->')).to.be.true;
+      expect(re.test('')).to.be.false;
+      expect(re.test(' \t')).to.be.false;
+      expect(re.test('TBFM: @2$4=vmean($2..$3)')).to.be.false;
+      expect(re.test('\tTBFM: @2$4=vmean($2..$3)')).to.be.false;
+      expect(re.test(' * <!--TBFM: $4=vmean($2..$3)-->')).to.be.true;
+    }
   });
 });
 

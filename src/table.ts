@@ -1,3 +1,4 @@
+import { Formula } from './calc';
 import { Focus } from './focus';
 import { Point } from './point';
 import { Range } from './range';
@@ -11,14 +12,18 @@ import { TableRow } from './table-row';
  */
 export class Table {
   private readonly _rows: TableRow[];
+  //private readonly _formulas: Formula[];
 
   /**
    * Creates a new `Table` object.
    *
    * @param rows - An array of rows that the table contains.
+   * @param formulas - An array of formulas attached to the table.
    */
+  //constructor(rows: TableRow[], formulas: Formula[]) {
   constructor(rows: TableRow[]) {
     this._rows = rows.slice();
+    //this._formulas = formulas.slice();
   }
 
   /**
