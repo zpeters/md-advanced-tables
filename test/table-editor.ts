@@ -624,6 +624,57 @@ describe('TableEditor', () => {
       }
     });
 
+    it('should return the set of table formula lines', () => {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| C   | D   |',
+        '| E   | F   |',
+        '<!-- TBLFM: @2=@3 -->',
+        '<!-- TBLFM: @2$3..@3$4=vmean(@3..@I-1$>-1) -->',
+        'bar',
+      ]);
+      textEditor.acceptsTableEdit = (_) => true;
+      const tableEditor = new TableEditor(textEditor);
+      textEditor.setCursorPosition(new Point(4, 2));
+      {
+        const ops = defaultOptions;
+        const info = tableEditor._findTable(ops);
+        if (info === undefined) {
+          assert.fail();
+        }
+        expect(info).to.be.an('object');
+        expect(info.range).to.be.an.instanceOf(Range);
+        expect(info.range.start.row).to.equal(1);
+        expect(info.range.start.column).to.equal(0);
+        expect(info.range.end.row).to.equal(4);
+        expect(info.range.end.column).to.equal(13);
+        expect(info.lines).to.deep.equal([
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+        ]);
+        expect(info.table).to.be.an.instanceOf(Table);
+        expect(info.table.toLines()).to.deep.equal([
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '| E   | F   |',
+        ]);
+        expect(info.focus).to.be.an.instanceOf(Focus);
+        expect(info.focus.row).to.equal(3);
+        expect(info.focus.column).to.equal(0);
+        expect(info.focus.offset).to.equal(1);
+        expect(info.formulaLines).to.be.an('array').of.length(2);
+        expect(info.formulaLines[0]).to.equal('<!-- TBLFM: @2=@3 -->');
+        expect(info.formulaLines[1]).to.equal(
+          '<!-- TBLFM: @2$3..@3$4=vmean(@3..@I-1$>-1) -->',
+        );
+      }
+    });
+
     it('should return undefined if there is no table at the cursor position', () => {
       const textEditor = new TextEditor([
         'foo',
@@ -1136,6 +1187,31 @@ describe('TableEditor', () => {
           '| A   | B   |',
           '| --- | --- |',
           '| C   | D   |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.format(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '<!-- TBLFM: @2=@3 -->',
           'bar',
         ]);
       }
@@ -4220,6 +4296,36 @@ describe('TableEditor', () => {
           ' | ----- | --- |',
           '  | C | D |',
           '   | E | F |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(3, 4));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.deleteRow(defaultOptions);
+        const range = textEditor.getSelectionRange();
+        if (range === undefined) {
+          assert.fail();
+        }
+        expect(range.start.row).to.equal(3);
+        expect(range.start.column).to.equal(2);
+        expect(range.end.row).to.equal(3);
+        expect(range.end.column).to.equal(3);
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
           'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
@@ -4425,6 +4531,33 @@ describe('TableEditor', () => {
           ' | ----- | --- |',
           '  | C | D |',
           '   | E | F |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(3, 4));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.moveRow(1, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(4);
+        expect(pos.column).to.equal(2);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '   | E | F |',
           'bar',
         ]);
         textEditor.setCursorPosition(new Point(4, 5));
@@ -4547,6 +4680,33 @@ describe('TableEditor', () => {
           '| --- | --- |',
           '| E   | F   |',
           '| C   | D   |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(3, 3));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Descending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(3);
+        expect(pos.column).to.equal(2);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | F   |',
+          '| C   | D   |',
+          '<!-- TBLFM: @2=@3 -->',
           'bar',
         ]);
       }
@@ -4705,6 +4865,31 @@ describe('TableEditor', () => {
           '| A   | B   |     |',
           '| --- | --- | --- |',
           '| C   | D   |     |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 9));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.insertColumn(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(14);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |     |',
+          '| --- | --- | --- |',
+          '| C   | D   |     |',
+          '<!-- TBLFM: @2=@3 -->',
           'bar',
         ]);
       }
@@ -4917,6 +5102,35 @@ describe('TableEditor', () => {
           '| A | B |',
           ' | ----- | --- |',
           '  | C | D |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(2, 3));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.deleteColumn(defaultOptions);
+        const range = textEditor.getSelectionRange();
+        if (range === undefined) {
+          assert.fail();
+        }
+        expect(range.start.row).to.equal(1);
+        expect(range.start.column).to.equal(2);
+        expect(range.end.row).to.equal(1);
+        expect(range.end.column).to.equal(3);
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| B   |',
+          '| --- |',
+          '| D   |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
           'bar',
         ]);
         textEditor.setCursorPosition(new Point(3, 4));
@@ -5107,6 +5321,31 @@ describe('TableEditor', () => {
           '| B   | A   |',
           '| --- | --- |',
           '| D   | C   |',
+          'bar',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          ' | ----- | --- |',
+          '  | C | D |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 6));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.moveColumn(-1, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(2);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| B   | A   |',
+          '| --- | --- |',
+          '| D   | C   |',
+          '<!-- TBLFM: @2=@3 -->',
           'bar',
         ]);
       }
@@ -5503,6 +5742,37 @@ describe('TableEditor', () => {
           '| E   | F   |',
           '| --- | --- |',
           '| G   | H   |',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          '  | C | D |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+          '| E | F |',
+          '  | G | H |',
+          '<!-- TBLFM: @2..@3=@4 -->',
+        ]);
+        textEditor.setCursorPosition(new Point(5, 4));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.formatAll(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(6);
+        expect(pos.column).to.equal(3);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | D   |',
+          '<!-- TBLFM: @2=@3 -->',
+          'bar',
+          '| E   | F   |',
+          '| --- | --- |',
+          '| G   | H   |',
+          '<!-- TBLFM: @2..@3=@4 -->',
         ]);
       }
       {

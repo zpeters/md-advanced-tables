@@ -23,7 +23,8 @@
     "cover": "nyc -r html -r text npm test",
     "build": "tsc",
     "prepublishOnly": "run-s lint test build doc",
-    "clean": "rimraf .nyc_output coverage dist doc"
+    "clean": "rimraf .nyc_output coverage dist doc",
+    "repl": "ts-node"
   },
   "repository": {
     "type": "git",
@@ -76,6 +77,9 @@
     "typescript": "4.0.5"
   },
   "dependencies": {
+    "@types/lodash": "4.14.165",
+    "ebnf": "1.9.0",
+    "lodash": "4.17.20",
     "meaw": "^4.3.0"
   }
 }

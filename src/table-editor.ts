@@ -1,4 +1,5 @@
 import { Alignment } from './alignment';
+import { Formula, parseFormulaLines } from './calc/calc';
 import { applyEditScript, shortestEditScript } from './edit-script';
 import { Focus } from './focus';
 import {
@@ -885,6 +886,21 @@ export class TableEditor {
     );
   }
 
+  public evaluateFormulas(options: Options): void {
+    this.withCompletedTable(
+      options,
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
+        const formulas = parseFormulaLines(formulaLines);
+        const newTable: Table = formulas.reduce<Table>(
+          (tbl: Table, current: Formula): Table => {
+            return tbl.applyFormula(current);
+          },
+          table,
+        );
+      },
+    );
+  }
+
   /**
    * Sorts rows alphanumerically using the column at the current focus.
    */
@@ -1070,6 +1086,7 @@ export class TableEditor {
             new Point(startRow, 0),
             new Point(endRow, lines[lines.length - 1].length),
           );
+          // formulaLines empty because formatting does not involve formulas
           const table = readTable(lines, options);
           const focus = table.focusOfPosition(pos, startRow);
 
@@ -1130,6 +1147,7 @@ export class TableEditor {
           new Point(startRow, 0),
           new Point(endRow, lines[lines.length - 1].length),
         );
+        // formulaLines empty because formatting does not involve formulas
         const table = readTable(lines, options);
         const focus = table.focusOfPosition(pos, startRow);
         // format

@@ -25,6 +25,7 @@ import { Table } from '../src/table';
 import { TableCell } from '../src/table-cell';
 import { TableRow } from '../src/table-row';
 import { expect } from 'chai';
+import { Formula } from '../src/calc/calc';
 
 const parserOptions: Options = optionsWithDefaults({
   leftMarginChars: new Set(),
@@ -398,6 +399,15 @@ describe('_formatTable(table, options)', () => {
         headerAlignment: HeaderAlignment.FOLLOW,
         textWidthOptions: twOptions,
       });
+      {
+        const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
+        const expectLines = ['| A   | B   |', '| --- |:--- |', '| C   |'];
+        const table = readTable(tableLines, parserOptions);
+        const formatted = _formatTable(table, options);
+        expect(formatted.table).to.be.an.instanceOf(Table);
+        expect(formatted.table.toLines()).to.deep.equal(expectLines);
+        expect(formatted.marginLeft).to.equal('');
+      }
       {
         const tableLines = ['| A | B |', '| --- |:----- |', '  | C |  '];
         const expectLines = ['| A   | B   |', '| --- |:--- |', '| C   |'];

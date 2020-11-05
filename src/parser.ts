@@ -139,7 +139,8 @@ export const marginRegexSrc = (chars: Set<string>): string => {
  * A pipe `|`, a backslash `\`, and a backquote will be ignored.
  * @return An regular expression object that matches margin of tables.
  */
-export const _marginRegex = (chars: Set<string>): RegExp => new RegExp(`^${marginRegexSrc(chars)}$`, 'u');
+export const _marginRegex = (chars: Set<string>): RegExp =>
+  new RegExp(`^${marginRegexSrc(chars)}$`, 'u');
 
 /**
  * Reads a table from lines.
