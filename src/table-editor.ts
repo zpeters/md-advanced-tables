@@ -231,78 +231,6 @@ export class TableEditor {
   }
 
   /**
-   * Finds a table, completes it, then does an operation with it.
-   *
-   * @param func - A function that does some operation on table information obtained by
-   * {@link TableEditor#_findTable}.
-   */
-  private withCompletedTable(
-    options: Options,
-    func: (tableInfo: TableInfo) => void,
-  ): void {
-    this._withTable(options, (tableInfo: TableInfo) => {
-      let newFocus = tableInfo.focus;
-      // complete
-      const completed = completeTable(tableInfo.table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // format
-      const formatted = formatTable(completed.table, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false),
-      );
-
-      tableInfo.table = formatted.table;
-      tableInfo.focus = newFocus;
-      func(tableInfo);
-    });
-  }
-
-  /**
-   * Formats the table and applies any changes based on the difference between
-   * originalLines and the newTable. Should generally be the last function call
-   * in a TableEditor function.
-   */
-  private formatAndApply(
-    options: Options,
-    range: Range,
-    originalLines: string[],
-    formulaLines: string[],
-    newTable: Table,
-    newFocus: Focus,
-    moved = false,
-  ): TableInfo {
-    // format
-    const formatted = formatTable(newTable, options);
-    newFocus = newFocus.setOffset(
-      _computeNewOffset(newFocus, newTable, formatted, moved),
-    );
-    // apply
-    this._textEditor.transact(() => {
-      this._updateLines(
-        range.start.row,
-        range.end.row + 1,
-        formatted.table.toLines(),
-        originalLines,
-      );
-      if (moved) {
-        this._selectFocus(range.start.row, formatted.table, newFocus);
-      } else {
-        this._moveToFocus(range.start.row, formatted.table, newFocus);
-      }
-    });
-    this.resetSmartCursor();
-    return {
-      range,
-      lines: originalLines,
-      formulaLines: formulaLines,
-      table: formatted.table,
-      focus: newFocus,
-    };
-  }
-
-  /**
    * Updates lines in a given range in the text editor.
    *
    * @private
@@ -370,7 +298,7 @@ export class TableEditor {
     this.withCompletedTable(
       options,
       ({ range, lines, table, focus }: TableInfo) => {
-        let newFocus = focus;
+        const newFocus = focus;
         // apply
         this._textEditor.transact(() => {
           this._updateLines(
@@ -465,7 +393,7 @@ export class TableEditor {
     this.withCompletedTable(
       options,
       ({ range, lines, table, focus }: TableInfo) => {
-        let newFocus = focus;
+        const newFocus = focus;
         // apply
         this._textEditor.transact(() => {
           this._updateLines(
@@ -892,9 +820,7 @@ export class TableEditor {
       ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         const formulas = parseFormulaLines(formulaLines);
         const newTable: Table = formulas.reduce<Table>(
-          (tbl: Table, current: Formula): Table => {
-            return tbl.applyFormula(current);
-          },
+          (tbl: Table, current: Formula): Table => tbl.applyFormula(current),
           table,
         );
       },
@@ -931,9 +857,8 @@ export class TableEditor {
             return -1;
           } else if (contentB === undefined) {
             return 1;
-          } else {
-            return contentA < contentB ? -1 : 1;
           }
+          return contentA < contentB ? -1 : 1;
         });
         if (sortOrder === SortOrder.Descending) {
           bodyRows.reverse();
@@ -1172,5 +1097,77 @@ export class TableEditor {
       }
       this._textEditor.setCursorPosition(pos);
     });
+  }
+
+  /**
+   * Finds a table, completes it, then does an operation with it.
+   *
+   * @param func - A function that does some operation on table information obtained by
+   * {@link TableEditor#_findTable}.
+   */
+  private withCompletedTable(
+    options: Options,
+    func: (tableInfo: TableInfo) => void,
+  ): void {
+    this._withTable(options, (tableInfo: TableInfo) => {
+      let newFocus = tableInfo.focus;
+      // complete
+      const completed = completeTable(tableInfo.table, options);
+      if (completed.delimiterInserted && newFocus.row > 0) {
+        newFocus = newFocus.setRow(newFocus.row + 1);
+      }
+      // format
+      const formatted = formatTable(completed.table, options);
+      newFocus = newFocus.setOffset(
+        _computeNewOffset(newFocus, completed.table, formatted, false),
+      );
+
+      tableInfo.table = formatted.table;
+      tableInfo.focus = newFocus;
+      func(tableInfo);
+    });
+  }
+
+  /**
+   * Formats the table and applies any changes based on the difference between
+   * originalLines and the newTable. Should generally be the last function call
+   * in a TableEditor function.
+   */
+  private formatAndApply(
+    options: Options,
+    range: Range,
+    originalLines: string[],
+    formulaLines: string[],
+    newTable: Table,
+    newFocus: Focus,
+    moved = false,
+  ): TableInfo {
+    // format
+    const formatted = formatTable(newTable, options);
+    newFocus = newFocus.setOffset(
+      _computeNewOffset(newFocus, newTable, formatted, moved),
+    );
+    // apply
+    this._textEditor.transact(() => {
+      this._updateLines(
+        range.start.row,
+        range.end.row + 1,
+        formatted.table.toLines(),
+        originalLines,
+      );
+      if (moved) {
+        this._selectFocus(range.start.row, formatted.table, newFocus);
+      } else {
+        this._moveToFocus(range.start.row, formatted.table, newFocus);
+      }
+    });
+    this.resetSmartCursor();
+    return {
+      range,
+      lines: originalLines,
+      formulaLines,
+      table: formatted.table,
+      focus: newFocus,
+    };
   }
 }

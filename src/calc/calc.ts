@@ -1,8 +1,6 @@
-import { Options } from '../options';
 import { Table } from '../table';
+import { Component } from './component';
 import { Grammars, IToken } from 'ebnf';
-import { AbsoluteRow, newRow, RelativeRow } from './row';
-import { AbsoluteColumn, RelativeColumn, newColumn } from './column';
 import { flatMap } from 'lodash';
 
 /*
@@ -36,7 +34,7 @@ relative_column ::= ( "<" | ">" ) offset?
 offset ::= ( "-" | "+" ) int
 
 single_param_function_call ::= single_param_function "(" parameter ")"
-single_param_function ::= "vmean" | "vsum" | "exp" | "tan" | "sin" | "cos"
+single_param_function ::= "mean" | "sum" | "exp" | "tan" | "sin" | "cos" 
 parameter ::= range | component
 
 conditional_function_call ::= "if(" predicate ", " source ", " source ")"
@@ -55,80 +53,49 @@ real ::= '-'? int
 int ::= [0-9]+
 `;
 
-export class Component {
-  public readonly row: AbsoluteRow | RelativeRow | undefined;
-  public readonly column: AbsoluteColumn | RelativeColumn | undefined;
-
-  constructor(ast: IToken) {
-    if (ast.type != 'component') {
-      throw 'Invalid AST token type of ' + ast.type;
-    }
-
-    for (let i = 0; i < ast.children.length; i++) {
-      const child = ast.children[i];
-      switch (child.type) {
-        case 'row':
-          if (this.row != undefined) {
-            throw 'Component may only have at most 1 row, more than 1 provided';
-          }
-          this.row = newRow(child);
-          break;
-        case 'column':
-          if (this.column != undefined) {
-            throw 'Component may only have at most 1 column, more than 1 provided';
-          }
-          this.column = newColumn(child);
-          break;
-      }
-    }
-
-    if (!this.row && !this.column) {
-      throw 'Cannot create a component without a row, a column, or both';
-    }
-  }
-  public readonly getValue = (): value => {
-    throw 'Range.getValue not implement';
-  };
-}
-
 enum Operator {
-  plus = 'plus',
-  minus = 'minus',
+  Plus = 'plus',
+  Minus = 'minus',
 }
 
 enum Func {
-  vmean = 'vmean',
+  Mean = 'mean',
+  Sum = 'sum',
+  Exp = 'exp',
+  Tan = 'tan',
+  Sin = 'sin',
+  Cos = 'cos',
 }
 
-interface value {}
+export type Value = number[][];
 
-interface valueProvider {
-  getValue(): value;
+export interface ValueProvider {
+  getValue(table: Table): Value;
 }
 
 class Range {
-  start: Component;
-  end: Component;
+  private readonly start: Component;
+  private readonly end: Component;
 
   constructor(ast: IToken) {
-    if (ast.type != 'range') {
-      throw 'Invalid AST token type of ' + ast.type;
+    if (ast.type !== 'range') {
+      throw Error('Invalid AST token type of ' + ast.type);
     }
-    if (ast.children.length != 2) {
-      throw 'Unexpected children length in Range';
+    if (ast.children.length !== 2) {
+      throw Error('Unexpected children length in Range');
     }
     this.start = new Component(ast.children[0]);
     this.end = new Component(ast.children[1]);
   }
 
-  public readonly getValue = (): value => {
-    throw 'Range.getValue not implement';
+  public readonly getValue = (): Value => {
+    throw Error('Range.getValue not implement');
   };
 }
 
 export class Formula {
-  public readonly source: Source;
-  public readonly destination: Destination;
+  private readonly source: Source;
+  private readonly destination: Destination;
 
   constructor(ast: IToken) {
     this.destination = new Destination(ast.children[0]);
@@ -137,14 +104,14 @@ export class Formula {
 }
 
 export class Source {
-  locationDescriptor: valueProvider;
+  private readonly locationDescriptor: ValueProvider;
 
   constructor(ast: IToken) {
-    if (ast.type != 'source') {
-      throw 'Invalid AST token type of ' + ast.type;
+    if (ast.type !== 'source') {
+      throw Error('Invalid AST token type of ' + ast.type);
     }
-    if (ast.children.length != 1) {
-      throw 'Unexpected children length in Source';
+    if (ast.children.length !== 1) {
+      throw Error('Unexpected children length in Source');
     }
 
     const child = ast.children[0];
@@ -156,29 +123,29 @@ export class Source {
         this.locationDescriptor = new Component(child);
         break;
       case 'single_param_function_call':
-        throw 'Source.single_param_function_call not implemented';
+        this.locationDescriptor = new SingleParamFunctionCall(child);
         break;
       case 'conditional_function_call':
-        throw 'Source.conditional_function_call not implemented';
+        throw Error('Source.conditional_function_call not implemented');
         break;
       case 'algebraic_operation':
-        throw 'Source.algebraic_operation not implemented';
+        throw Error('Source.algebraic_operation not implemented');
         break;
       default:
-        throw 'Unrecognized source type ' + child.type;
+        throw Error('Unrecognized source type ' + child.type);
     }
   }
 }
 
 export class Destination {
-  public readonly locationDescriptor: Component | Range;
+  private readonly locationDescriptor: Component | Range;
 
   constructor(ast: IToken) {
-    if (ast.type != 'destination') {
-      throw 'Invalid AST token type of ' + ast.type;
+    if (ast.type !== 'destination') {
+      throw Error('Invalid AST token type of ' + ast.type);
     }
-    if (ast.children.length != 1) {
-      throw 'Unexpected children length in Destination';
+    if (ast.children.length !== 1) {
+      throw Error('Unexpected children length in Destination');
     }
 
     const child = ast.children[0];
@@ -190,19 +157,54 @@ export class Destination {
         this.locationDescriptor = new Component(child);
         break;
       default:
-        throw 'Unrecognized destination type ' + child.type;
+        throw Error('Unrecognized destination type ' + child.type);
     }
   }
 }
 
-// TODO: Add tests
-export const evaluateFormulas = (table: Table, options: Options): Table => {
-  return table;
+export class SingleParamFunctionCall {
+  private readonly locationDescriptor: ValueProvider;
+
+  constructor(ast: IToken) {
+    if (ast.type !== 'destination') {
+      throw Error('Invalid AST token type of ' + ast.type);
+    }
+    if (ast.children.length !== 2) {
+      throw Error('Unexpected children length in SingleParamFunctionCall');
+    }
+
+    const functionChild = ast.children[0];
+    console.log(functionChild.text);
+    // "mean" | "sum" | "exp" | "tan" | "sin" | "cos"
+
+    // TODO: Parse the function
+
+    const paramChild = ast.children[0];
+    this.locationDescriptor = newValueProvider(paramChild);
+  }
+
+  public readonly getValue = (table: Table): Value => {
+    const inputData = this.locationDescriptor.getValue(table);
+
+    // TODO: Now operate on this input data
+
+    throw Error('Not implemented');
+  };
+}
+
+const newValueProvider = (ast: IToken): ValueProvider => {
+  switch (ast.type) {
+    case 'range':
+      return new Range(ast);
+    case 'component':
+      return new Component(ast);
+    default:
+      throw Error('Unrecognized valueProvider type ' + ast.type);
+  }
 };
 
-export const parseFormulaLines = (lines: string[]): Formula[] => {
-  return flatMap(lines, (line) => parseFormula(line));
-};
+export const parseFormulaLines = (lines: string[]): Formula[] =>
+  flatMap(lines, (line) => parseFormula(line));
 
 /**
  * Parse the provided line, returning any found formulas. A single line may
@@ -218,12 +220,12 @@ export const parseFormula = (line: string, printAST = false): Formula[] => {
     prettyPrintAST(ast);
   }
 
-  if (ast.type != 'tblfm_line') {
+  if (ast.type !== 'tblfm_line') {
     console.error('Unexpected root element of type ' + ast.type);
     return [];
   }
 
-  if (ast.children.length != 1) {
+  if (ast.children.length !== 1) {
     console.error(
       'Unexpected number of formula_list element in root: ' +
         ast.children.length,
@@ -237,13 +239,14 @@ export const parseFormula = (line: string, printAST = false): Formula[] => {
   return formulas.map((formula) => new Formula(formula));
 };
 
-function prettyPrintAST(token: IToken, level = 0) {
+const prettyPrintAST = (token: IToken, level = 0): void => {
   console.log(
     '  '.repeat(level) +
-      `|-${token.type}${token.children.length == 0 ? '=' + token.text : ''}`,
+      `|-${token.type}${token.children.length === 0 ? '=' + token.text : ''}`,
   );
-  token.children &&
+  if (token.children) {
     token.children.forEach((c) => {
       prettyPrintAST(c, level + 1);
     });
-}
+  }
+};
