@@ -116,6 +116,22 @@ export class Table {
   }
 
   /**
+   * Sets a cell in the table to a new value, returning a copy of the table
+   * with the modified value.
+   *
+   * If an invalid index is provided, the table will be unchanged.
+   */
+  public setCellAt(
+    rowIndex: number,
+    columnIndex: number,
+    value: string,
+  ): Table {
+    const rows = this.getRows(); // a copy
+    rows[rowIndex] = rows[rowIndex].setCellAt(columnIndex, value);
+    return new Table(rows);
+  }
+
+  /**
    * Computes a focus from a point in the text editor.
    *
    * @param pos - A point in the text editor.
@@ -207,27 +223,12 @@ export class Table {
     );
   }
 
+  /**
+   * Evaluate the formula, applying the results to this table and returning the
+   * changes as a new table.
+   */
   public applyFormula(formula: Formula): Table {
     // TODO: Add tests in test/table.ts
-
-    // TODO: Change functions from vmean to mean, mode, min, etc.
-
-    // Source needs to be evaluated from the inside, out
-    // For example, @2$3=sum($4 * 2)
-
-    // TODO: Grammar does not allow for the function above.
-
-    // Recursively evaluate from the inside out.
-    // Each action pulls data from the table, and stores in a local matrix.
-    // Operations can be performed on the matrix as necessary,
-    //   producing another matrix of the same dimensions, or a single value.
-    // A parent operation consumes the two child matrices.
-    //   Arity of the child matricies should be checked, and rejected if mismatched.
-    // Repeat recursively up to the root.
-    // The destination then compares the arity of the final source matrix.
-    //   If one value, it can be assigned to a cell or range
-    //   If a range, it can only be assigned to a range of matching dimensions.
-
-    throw Error('Table.applyFormula not implemented');
+    return formula.merge(this);
   }
 }

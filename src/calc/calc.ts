@@ -1,7 +1,10 @@
 import { Table } from '../table';
 import { Component } from './component';
 import { Grammars, IToken } from 'ebnf';
-import { flatMap } from 'lodash';
+import { flatMap, isEqual } from 'lodash';
+
+// TODO: Add unit test for table.setCellAt
+// TODO: Add unit test for tablerow.setCellAt
 
 /*
 import {parseFormula} from './src/calc';
@@ -67,7 +70,34 @@ enum Func {
   Cos = 'cos',
 }
 
-export type Value = number[][];
+export interface Arity {
+  rows: number;
+  cols: number;
+}
+
+export class Value {
+  private readonly val: string[][];
+
+  constructor(val: string[][]) {
+    this.val = val;
+  }
+
+  public get(row: number, column: number): string {
+    return this.val[row][column];
+  }
+
+  /**
+   * getArity returns the dimensions of the contained value, in rows and columns
+   */
+  public getArity = (): Arity => {
+    const maxCols = this.val.reduce<number>(
+      (max: number, currentRow: string[]): number =>
+        Math.max(max, currentRow.length),
+      0,
+    );
+    return { rows: this.val.length, cols: maxCols };
+  };
+}
 
 export interface ValueProvider {
   getValue(table: Table): Value;
@@ -88,8 +118,24 @@ class Range {
     this.end = new Component(ast.children[1]);
   }
 
-  public readonly getValue = (): Value => {
+  public readonly getValue = (table: Table): Value => {
     throw Error('Range.getValue not implement');
+  };
+
+  /**
+   * getArity returns the dimensions described by the Range, in rows and
+   * columns. Unlike in a Value, a table object is required to resolve the
+   * relative references and dimensions of rows/columns.
+   */
+  public readonly getArity = (table: Table): Arity => {
+    throw Error('getArity not implemented on Range');
+  };
+  /**
+   * merge takes the provided values, and attempts to place them in the
+   * location described by this Range in the provided table.
+   */
+  public readonly merge = (table: Table, value: Value): Table => {
+    throw Error('merge not implemented on Range');
   };
 }
 
@@ -101,6 +147,36 @@ export class Formula {
     this.destination = new Destination(ast.children[0]);
     this.source = new Source(ast.children[1]);
   }
+
+  public merge = (table: Table): Table => {
+    // TODO: Change functions from vmean to mean, mode, min, etc.
+
+    // Source needs to be evaluated from the inside, out
+    // For example, @2$3=sum($4 * 2)
+
+    // TODO: Grammar does not allow for the function above.
+
+    // Recursively evaluate from the inside out.
+    // Each action pulls data from the table, and stores in a local matrix.
+    // Operations can be performed on the matrix as necessary,
+    //   producing another matrix of the same dimensions, or a single value.
+    // A parent operation consumes the two child matrices.
+    //   Arity of the child matricies should be checked, and rejected if mismatched.
+    // Repeat recursively up to the root.
+    // The destination then compares the arity of the final source matrix.
+    //   If one value, it can be assigned to a cell or range
+    //   If a range, it can only be assigned to a range of matching dimensions.
+
+    const value = this.source.getValue(table);
+
+    const valueArity = value.getArity();
+    const destArity = this.destination.getArity(table);
+    if (!isEqual(valueArity, destArity)) {
+      throw Error('Source and destination arity mismatch');
+    }
+
+    return this.destination.merge(table, value);
+  };
 }
 
 export class Source {
@@ -114,27 +190,12 @@ export class Source {
       throw Error('Unexpected children length in Source');
     }
 
-    const child = ast.children[0];
-    switch (child.type) {
-      case 'range':
-        this.locationDescriptor = new Range(child);
-        break;
-      case 'component':
-        this.locationDescriptor = new Component(child);
-        break;
-      case 'single_param_function_call':
-        this.locationDescriptor = new SingleParamFunctionCall(child);
-        break;
-      case 'conditional_function_call':
-        throw Error('Source.conditional_function_call not implemented');
-        break;
-      case 'algebraic_operation':
-        throw Error('Source.algebraic_operation not implemented');
-        break;
-      default:
-        throw Error('Unrecognized source type ' + child.type);
-    }
+    const paramChild = ast.children[0];
+    this.locationDescriptor = newValueProvider(paramChild);
   }
+
+  public getValue = (table: Table): Value =>
+    this.locationDescriptor.getValue(table);
 }
 
 export class Destination {
@@ -160,6 +221,21 @@ export class Destination {
         throw Error('Unrecognized destination type ' + child.type);
     }
   }
+
+  /**
+   * getArity returns the dimensions described by the destination, in rows and
+   * columns. Unlike in a Value, a table object is required to resolve the
+   * relative references and dimensions of rows/columns.
+   */
+  public getArity = (table: Table): Arity =>
+    this.locationDescriptor.getArity(table);
+
+  /**
+   * merge takes the provided values, and attempts to place them in the
+   * location described by this Range in the provided table.
+   */
+  public readonly merge = (table: Table, value: Value): Table =>
+    this.locationDescriptor.merge(table, value);
 }
 
 export class SingleParamFunctionCall {
@@ -198,6 +274,12 @@ const newValueProvider = (ast: IToken): ValueProvider => {
       return new Range(ast);
     case 'component':
       return new Component(ast);
+    case 'single_param_function_call':
+      return new SingleParamFunctionCall(ast);
+    case 'conditional_function_call':
+      throw Error('Source.conditional_function_call not implemented');
+    case 'algebraic_operation':
+      throw Error('Source.algebraic_operation not implemented');
     default:
       throw Error('Unrecognized valueProvider type ' + ast.type);
   }

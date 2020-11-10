@@ -47,24 +47,6 @@ describe('Table', () => {
   });
 
   /**
-   * @test {Table#getHeight}
-   */
-  describe('#getHeight()', () => {
-    it('should return the number of the rows', () => {
-      const table = new Table([
-        new TableRow([new TableCell('A'), new TableCell('B')], '', ''),
-        new TableRow([new TableCell('---')], '', ''),
-        new TableRow(
-          [new TableCell('C'), new TableCell('D'), new TableCell('E')],
-          ' ',
-          '  ',
-        ),
-      ]);
-      expect(table.getHeight()).to.equal(3);
-    });
-  });
-
-  /**
    * @test {Table#getWidth}
    */
   describe('#getWidth()', () => {

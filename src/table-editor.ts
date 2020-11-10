@@ -823,6 +823,16 @@ export class TableEditor {
           (tbl: Table, current: Formula): Table => tbl.applyFormula(current),
           table,
         );
+
+        const { table: formattedTable, focus: newFocus } = this.formatAndApply(
+          options,
+          range,
+          lines,
+          formulaLines,
+          newTable,
+          focus,
+          false,
+        );
       },
     );
   }

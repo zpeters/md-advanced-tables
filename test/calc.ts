@@ -1,59 +1,98 @@
-import { assert, expect } from 'chai';
-import { Component, Formula, parseFormula } from '../src/calc/calc';
+import { defaultOptions } from '../src/options';
+import { Point } from '../src/point';
+import {
+  _computeNewOffset,
+  _createIsTableRowRegex,
+  TableEditor,
+  _createIsTableFormulaRegex,
+} from '../src/table-editor';
+import { TextEditor } from './text-editor-mock';
+import { expect } from 'chai';
 
 /**
- * @test {Formula}
+ * @test Formulas
  */
-describe('Formula', () => {
+describe('Formulas', () => {
   /**
-   * @test {Formula.constructor}
+   * @test {TableEditor#evaluateFormulas}
    */
-  describe('constructor(source, destination)', () => {
-    it('should create a Formua object', () => {
-      /*
+  describe('#evaluateFormulas(options)', () => {
+    it('should apply simple cell, column, and row replacement formulas', () => {
       {
-        const formulaStr = '<!-- TBFM: $1=$2 -->';
-        const formulas = parseFormula(formulaStr);
-        expect(formulas).to.be.an('array').of.length(1);
-        const formula = formulas[0];
-        expect(formula).to.be.an.instanceOf(Formula);
-        expect(formula.source).to.be.an('array').of.length(1);
-        expect(formula.source[0]).to.be.an.instanceOf(Component);
-        const sourceComponent = formula.source[0] as Component;
-        expect(sourceComponent.row).to.be.undefined;
-        expect(sourceComponent.rowOffset).to.equal(0);
-        expect(sourceComponent.column).to.equal(2);
-        expect(sourceComponent.columnOffset).to.equal(0);
-        expect(formula.destination).to.be.an.instanceOf(Component);
-        const destinationComponent = formula.destination
-          .locationDescriptor as Component;
-        expect(destinationComponent.row).to.be.undefined;
-        expect(destinationComponent.rowOffset).to.equal(0);
-        expect(destinationComponent.column).to.equal(1);
-        expect(destinationComponent.columnOffset).to.equal(0);
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          '| - | - |',
+          '| 1 | 2 |',
+          '| 3 | |',
+          '<!-- TBLFM: @4=@3 -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| 1   | 2   |',
+          '| 1   | 2   |',
+          '<!-- TBLFM: @4=@3 -->',
+        ]);
       }
       {
-        const formulaStr = '<!-- TBFM: @2$1=@2$2 -->';
-        const formulas = parseFormula(formulaStr);
-        expect(formulas).to.be.an('array').of.length(1);
-        const formula = formulas[0];
-        expect(formula).to.be.an.instanceOf(Formula);
-        expect(formula.source).to.be.an('array').of.length(1);
-        expect(formula.source[0]).to.be.an.instanceOf(Component);
-        const sourceComponent = formula.source[0] as Component;
-        expect(sourceComponent.row).to.equal(2);
-        expect(sourceComponent.rowOffset).to.equal(0);
-        expect(sourceComponent.column).to.equal(2);
-        expect(sourceComponent.columnOffset).to.equal(0);
-        expect(formula.destination).to.be.an.instanceOf(Component);
-        const destinationComponent = formula.destination
-          .locationDescriptor as Component;
-        expect(destinationComponent.row).to.equal(2);
-        expect(destinationComponent.rowOffset).to.equal(0);
-        expect(destinationComponent.column).to.equal(1);
-        expect(destinationComponent.columnOffset).to.equal(0);
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          '| - | - |',
+          '| 1 | 2 |',
+          '| 3 | 4 |',
+          '<!-- TBLFM: $1=$2 -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| B   | B   |',
+          '| --- | --- |',
+          '| 2   | 2   |',
+          '| 4   | 4   |',
+          '<!-- TBLFM: $1=$2 -->',
+        ]);
       }
-      */
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B |',
+          '| - | - |',
+          '| 1 | 2 |',
+          '| 3 | 4 |',
+          '<!-- TBLFM: @3$1=@4$2 -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| 4   | 2   |',
+          '| 3   | 4   |',
+          '<!-- TBLFM: @3$1=@4$2 -->',
+        ]);
+      }
     });
   });
 });

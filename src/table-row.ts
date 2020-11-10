@@ -56,6 +56,18 @@ export class TableRow {
   }
 
   /**
+   * Sets a cell in the row to a new value, returning a copy of the row
+   * with the modified value.
+   *
+   * If an invalid index is provided, the row will be unchanged.
+   */
+  public setCellAt(index: number, value: string): TableRow {
+    const cells = this.getCells(); // a copy
+    cells[index] = new TableCell(value);
+    return new TableRow(cells, this.marginLeft, this.marginRight);
+  }
+
+  /**
    * Convers the row to a text representation.
    */
   public toText(): string {
