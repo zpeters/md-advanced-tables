@@ -1,4 +1,4 @@
-import { Formula } from './calc/calc';
+import { Formula, parseAndApply } from './calc/calc';
 import { Focus } from './focus';
 import { Point } from './point';
 import { Range } from './range';
@@ -227,8 +227,8 @@ export class Table {
    * Evaluate the formula, applying the results to this table and returning the
    * changes as a new table.
    */
-  public applyFormula(formula: Formula): Table {
+  public applyFormulas(formulaLines: string[]): Table {
     // TODO: Add tests in test/table.ts
-    return formula.merge(this);
+    return parseAndApply(formulaLines, this);
   }
 }

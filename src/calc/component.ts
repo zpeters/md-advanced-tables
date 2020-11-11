@@ -1,158 +1,70 @@
 import { Table } from '../table';
-import { Arity, Value } from './calc';
+import { Range } from './range';
 import { IToken } from 'ebnf';
-import { range } from 'lodash';
 
-export class Component {
-  private readonly row: AbsoluteRow | RelativeRow | undefined;
-  private readonly column: AbsoluteColumn | RelativeColumn | undefined;
+export const newComponent = (ast: IToken, table: Table): Range => {
+  if (ast.type !== 'component') {
+    throw Error('Invalid AST token type of ' + ast.type);
+  }
 
-  constructor(ast: IToken) {
-    if (ast.type !== 'component') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
+  let row: AbsoluteRow | undefined = undefined;
+  let column: AbsoluteColumn | undefined = undefined;
 
-    for (let i = 0; i < ast.children.length; i++) {
-      const child = ast.children[i];
-      switch (child.type) {
-        case 'row':
-          if (this.row !== undefined) {
-            throw Error(
-              'Component may only have at most 1 row, more than 1 provided',
-            );
-          }
-          this.row = newRow(child);
-          break;
-        case 'column':
-          if (this.column !== undefined) {
-            throw Error(
-              'Component may only have at most 1 column, more than 1 provided',
-            );
-          }
-          this.column = newColumn(child);
-          break;
-      }
-    }
-
-    if (!this.row && !this.column) {
-      throw Error('Cannot create a component without a row, a column, or both');
+  for (let i = 0; i < ast.children.length; i++) {
+    const child = ast.children[i];
+    switch (child.type) {
+      case 'row':
+        if (row !== undefined) {
+          throw Error(
+            'Component may only have at most 1 row, more than 1 provided',
+          );
+        }
+        row = newRow(child, table);
+        break;
+      case 'column':
+        if (column !== undefined) {
+          throw Error(
+            'Component may only have at most 1 column, more than 1 provided',
+          );
+        }
+        column = newColumn(child, table);
+        break;
     }
   }
 
-  /**
-   * getValue retrieves cells from the provided table as described by this
-   * component.
-   */
-  public readonly getValue = (table: Table): Value => {
-    if (this.row && !this.column) {
-      // Retrieving a full row
-      const row = this.row.asAbsoluteRow(table);
-      const tableRow = table.getRows()[row.index];
-      if (!tableRow) {
-        throw Error('Component referenced invalid row in table');
-      }
-      return new Value([
-        range(0, table.getWidth()).map((colIndex): string => {
-          const cell = tableRow.getCellAt(colIndex)!;
-          return cell.toText();
-        }),
-      ]);
-    } else if (this.column && !this.row) {
-      // Retrieving a full column
-      const column = this.column.asAbsoluteColumn(table);
-      return new Value(
-        range(0, table.getHeight()).map((rowIndex): string[] => {
-          const cell = table.getRows()[rowIndex].getCellAt(column.index);
-          if (!cell) {
-            throw Error('Component referenced invalid column in table');
-          }
-          return [cell.toText()];
-        }),
-      );
-    } else if (this.column && this.row) {
-      // Retrieving only a cell
-      const row = this.row.asAbsoluteRow(table);
-      const column = this.column.asAbsoluteColumn(table);
+  if (row && column) {
+    return new Range(
+      { row: row.index, column: column.index },
+      { row: row.index, column: column.index },
+    );
+  }
 
-      const tableRow = table.getRows()[row.index];
-      if (!tableRow) {
-        throw Error('Component referenced invalid row in table');
-      }
-      const tableCell = tableRow.getCellAt(column.index);
-      if (!tableCell) {
-        throw Error('Component referenced invalid column in table');
-      }
-      return new Value([[tableCell.toText()]]);
-    }
-    throw Error('Component description has no valid row or column');
-  };
+  // Range values are inclusive, so remove one from the
+  // table height and width.
 
-  /**
-   * getArity returns the dimensions described by the component, in rows and
-   * columns. Unlike in a Value, a table object is required to resolve the
-   * relative references and dimensions of rows/columns.
-   *
-   * This function can be called on a component in a destination or a source,
-   * so it should get the arity from the provided table itself, not by calling
-   * getValue.
-   */
-  public readonly getArity = (table: Table): Arity => {
-    const arity = {
-      rows: 1,
-      cols: 1,
-    };
+  if (row) {
+    return new Range(
+      { row: row.index, column: 0 },
+      { row: row.index, column: table.getWidth() - 1 },
+    );
+  }
 
-    if (this.row && this.column) {
-      return arity;
-    }
-    if (this.row) {
-      arity.cols = table.getWidth();
-    }
-    if (this.column) {
-      arity.rows = table.getHeight();
-    }
+  if (column) {
+    return new Range(
+      { row: 0, column: column.index },
+      { row: table.getHeight() - 1, column: column.index },
+    );
+  }
 
-    return arity;
-  };
-  /**
-   * merge takes the provided values, and attempts to place them in the
-   * location described by this Range in the provided table.
-   */
-  public readonly merge = (table: Table, value: Value): Table => {
-    const rowStart = this.row ? this.row?.asAbsoluteRow(table).index : 0;
-    const rowEnd = this.row
-      ? this.row?.asAbsoluteRow(table).index + 1
-      : table.getHeight();
+  throw Error('Cannot create a component without a row, column, or both');
+};
 
-    const columnStart = this.column
-      ? this.column?.asAbsoluteColumn(table).index
-      : 0;
-    const columnEnd = this.column
-      ? this.column?.asAbsoluteColumn(table).index + 1
-      : table.getWidth();
-
-    let newTable = table;
-    let valueRow = 0;
-    let valueColumn = 0;
-    for (let r = rowStart; r < rowEnd; r++) {
-      valueColumn = 0;
-      for (let c = columnStart; c < columnEnd; c++) {
-        const val = value.get(valueRow, valueColumn);
-        newTable = newTable.setCellAt(r, c, val.toString());
-        valueColumn++;
-      }
-      valueRow++;
-    }
-
-    return newTable;
-  };
-}
 enum ColumnSymbol {
   First = '<',
   Last = '>',
 }
 
-const newColumn = (ast: IToken): AbsoluteColumn | RelativeColumn => {
+export const newColumn = (ast: IToken, table: Table): AbsoluteColumn => {
   if (ast.type !== 'column') {
     throw Error('Invalid AST token type of ' + ast.type);
   }
@@ -165,48 +77,44 @@ const newColumn = (ast: IToken): AbsoluteColumn | RelativeColumn => {
     case 'real':
       return new AbsoluteColumn(child);
     case 'relative_row':
-      return new RelativeColumn(child);
+      return relativeColumnAsAbsoluteColumn(child, table);
     default:
       throw Error('Unexpected column type ' + child.type);
   }
 };
 
-class RelativeColumn {
-  private readonly offset: number;
-  private readonly anchor: ColumnSymbol;
-
-  constructor(ast: IToken) {
-    if (ast.type !== 'relative_column') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-
-    switch (ast.text[0]) {
-      case ColumnSymbol.First:
-        this.anchor = ColumnSymbol.First;
-        break;
-      case ColumnSymbol.Last:
-        this.anchor = ColumnSymbol.Last;
-        break;
-        break;
-      default:
-        throw Error('Invalid relative column symbol');
-    }
-
-    if (ast.children.length !== 1) {
-      throw Error('Unexpected children length in RelativeColumn');
-    }
-    const child = ast.children[0];
-    if (child.type !== 'offset') {
-      throw Error('Unexpected child type in RelativeColumn of ' + child.type);
-    }
-
-    this.offset = +child.text;
+const relativeColumnAsAbsoluteColumn = (
+  ast: IToken,
+  table: Table,
+): AbsoluteColumn => {
+  if (ast.type !== 'relative_column') {
+    throw Error('Invalid AST token type of ' + ast.type);
   }
 
-  public readonly asAbsoluteColumn = (table: Table): AbsoluteColumn => {
-    throw Error('asAbsoluteColumn not implemented');
-  };
-}
+  let anchor = ColumnSymbol.First;
+  switch (ast.text[0]) {
+    case ColumnSymbol.First:
+      anchor = ColumnSymbol.First;
+      break;
+    case ColumnSymbol.Last:
+      anchor = ColumnSymbol.Last;
+      break;
+      break;
+    default:
+      throw Error('Invalid relative column symbol');
+  }
+
+  if (ast.children.length !== 1) {
+    throw Error('Unexpected children length in RelativeColumn');
+  }
+  const child = ast.children[0];
+  if (child.type !== 'offset') {
+    throw Error('Unexpected child type in RelativeColumn of ' + child.type);
+  }
+  const offset = +child.text;
+
+  throw Error('relativeColumnAsAbsoluteColumn not implemented');
+};
 
 class AbsoluteColumn {
   public readonly index: number;
@@ -226,8 +134,6 @@ class AbsoluteColumn {
     // account for internal locations being 0 indexed
     this.index = +child.text - 1;
   }
-
-  public readonly asAbsoluteColumn = (table: Table): AbsoluteColumn => this;
 }
 
 enum RowSymbol {
@@ -236,7 +142,7 @@ enum RowSymbol {
   Last = '>',
 }
 
-const newRow = (ast: IToken): AbsoluteRow | RelativeRow => {
+export const newRow = (ast: IToken, table: Table): AbsoluteRow => {
   if (ast.type !== 'row') {
     throw Error('Invalid AST token type of ' + ast.type);
   }
@@ -249,50 +155,43 @@ const newRow = (ast: IToken): AbsoluteRow | RelativeRow => {
     case 'real':
       return new AbsoluteRow(child);
     case 'relative_row':
-      return new RelativeRow(child);
+      return relativeRowAsAbsoluteRow(child, table);
     default:
       throw Error('Unexpected row type ' + child.type);
   }
 };
 
-class RelativeRow {
-  private readonly offset: number;
-  private readonly anchor: RowSymbol;
-
-  constructor(ast: IToken) {
-    if (ast.type !== 'relative_row') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-
-    switch (ast.text[0]) {
-      case RowSymbol.First:
-        this.anchor = RowSymbol.First;
-        break;
-      case RowSymbol.Last:
-        this.anchor = RowSymbol.Last;
-        break;
-      case RowSymbol.Header:
-        this.anchor = RowSymbol.Header;
-        break;
-      default:
-        throw Error('Invalid relative row symbol');
-    }
-
-    if (ast.children.length !== 1) {
-      throw Error('Unexpected children length in RelativeRow');
-    }
-    const child = ast.children[0];
-    if (child.type !== 'offset') {
-      throw Error('Unexpected child type in RelativeRow of ' + child.type);
-    }
-
-    this.offset = +child.text;
+const relativeRowAsAbsoluteRow = (ast: IToken, table: Table): AbsoluteRow => {
+  if (ast.type !== 'relative_row') {
+    throw Error('Invalid AST token type of ' + ast.type);
   }
 
-  public readonly asAbsoluteRow = (table: Table): AbsoluteRow => {
-    throw Error('asAbsoluteRow not implemented');
-  };
-}
+  let anchor = RowSymbol.First;
+  switch (ast.text[0]) {
+    case RowSymbol.First:
+      anchor = RowSymbol.First;
+      break;
+    case RowSymbol.Last:
+      anchor = RowSymbol.Last;
+      break;
+    case RowSymbol.Header:
+      anchor = RowSymbol.Header;
+      break;
+    default:
+      throw Error('Invalid relative row symbol');
+  }
+
+  if (ast.children.length !== 1) {
+    throw Error('Unexpected children length in RelativeRow');
+  }
+  const child = ast.children[0];
+  if (child.type !== 'offset') {
+    throw Error('Unexpected child type in RelativeRow of ' + child.type);
+  }
+  const offset = +child.text;
+
+  throw Error('relativeRowAsAbsoluteRow not implemented');
+};
 
 class AbsoluteRow {
   public readonly index: number;
@@ -312,6 +211,4 @@ class AbsoluteRow {
     // account for internal locations being 0 indexed
     this.index = +child.text - 1;
   }
-
-  public readonly asAbsoluteRow = (table: Table): AbsoluteRow => this;
 }

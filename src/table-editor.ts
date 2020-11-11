@@ -1,5 +1,4 @@
 import { Alignment } from './alignment';
-import { Formula, parseFormulaLines } from './calc/calc';
 import { applyEditScript, shortestEditScript } from './edit-script';
 import { Focus } from './focus';
 import {
@@ -818,11 +817,7 @@ export class TableEditor {
     this.withCompletedTable(
       options,
       ({ range, lines, formulaLines, table, focus }: TableInfo) => {
-        const formulas = parseFormulaLines(formulaLines);
-        const newTable: Table = formulas.reduce<Table>(
-          (tbl: Table, current: Formula): Table => tbl.applyFormula(current),
-          table,
-        );
+        const newTable: Table = table.applyFormulas(formulaLines);
 
         const { table: formattedTable, focus: newFocus } = this.formatAndApply(
           options,

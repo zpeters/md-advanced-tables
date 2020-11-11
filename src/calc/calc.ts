@@ -1,15 +1,11 @@
 import { Table } from '../table';
-import { Component } from './component';
+import { newComponent } from './component';
+import { newRange, Range } from './range';
 import { Grammars, IToken } from 'ebnf';
 import { flatMap, isEqual } from 'lodash';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
-
-/*
-import {parseFormula} from './src/calc';
-parseFormula("<!-- TBLFM: @2$1=@>-1$1 -->", true);
- */
 
 /**
  * W3C grammar describing a valid formula at the bottom of a table.
@@ -28,7 +24,7 @@ formula ::= destination "=" source display_directive?
 destination ::=  range | component
 source ::= range | component | single_param_function_call | conditional_function_call | algebraic_operation
 
-range ::= component ".." component
+range ::= row column ".." row column
 component ::= row column | row | column
 row ::= "@" ( real | relative_row )
 column ::= "$" ( real | relative_column )
@@ -103,49 +99,13 @@ export interface ValueProvider {
   getValue(table: Table): Value;
 }
 
-class Range {
-  private readonly start: Component;
-  private readonly end: Component;
-
-  constructor(ast: IToken) {
-    if (ast.type !== 'range') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-    if (ast.children.length !== 2) {
-      throw Error('Unexpected children length in Range');
-    }
-    this.start = new Component(ast.children[0]);
-    this.end = new Component(ast.children[1]);
-  }
-
-  public readonly getValue = (table: Table): Value => {
-    throw Error('Range.getValue not implement');
-  };
-
-  /**
-   * getArity returns the dimensions described by the Range, in rows and
-   * columns. Unlike in a Value, a table object is required to resolve the
-   * relative references and dimensions of rows/columns.
-   */
-  public readonly getArity = (table: Table): Arity => {
-    throw Error('getArity not implemented on Range');
-  };
-  /**
-   * merge takes the provided values, and attempts to place them in the
-   * location described by this Range in the provided table.
-   */
-  public readonly merge = (table: Table, value: Value): Table => {
-    throw Error('merge not implemented on Range');
-  };
-}
-
 export class Formula {
   private readonly source: Source;
   private readonly destination: Destination;
 
-  constructor(ast: IToken) {
-    this.destination = new Destination(ast.children[0]);
-    this.source = new Source(ast.children[1]);
+  constructor(ast: IToken, table: Table) {
+    this.destination = new Destination(ast.children[0], table);
+    this.source = new Source(ast.children[1], table);
   }
 
   public merge = (table: Table): Table => {
@@ -179,10 +139,10 @@ export class Formula {
   };
 }
 
-export class Source {
+class Source {
   private readonly locationDescriptor: ValueProvider;
 
-  constructor(ast: IToken) {
+  constructor(ast: IToken, table: Table) {
     if (ast.type !== 'source') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
@@ -191,17 +151,17 @@ export class Source {
     }
 
     const paramChild = ast.children[0];
-    this.locationDescriptor = newValueProvider(paramChild);
+    this.locationDescriptor = newValueProvider(paramChild, table);
   }
 
   public getValue = (table: Table): Value =>
     this.locationDescriptor.getValue(table);
 }
 
-export class Destination {
-  private readonly locationDescriptor: Component | Range;
+class Destination {
+  private readonly locationDescriptor: Range;
 
-  constructor(ast: IToken) {
+  constructor(ast: IToken, table: Table) {
     if (ast.type !== 'destination') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
@@ -212,10 +172,10 @@ export class Destination {
     const child = ast.children[0];
     switch (ast.children[0].type) {
       case 'range':
-        this.locationDescriptor = new Range(child);
+        this.locationDescriptor = newRange(child, table);
         break;
       case 'component':
-        this.locationDescriptor = new Component(child);
+        this.locationDescriptor = newComponent(child, table);
         break;
       default:
         throw Error('Unrecognized destination type ' + child.type);
@@ -227,8 +187,7 @@ export class Destination {
    * columns. Unlike in a Value, a table object is required to resolve the
    * relative references and dimensions of rows/columns.
    */
-  public getArity = (table: Table): Arity =>
-    this.locationDescriptor.getArity(table);
+  public getArity = (table: Table): Arity => this.locationDescriptor.getArity();
 
   /**
    * merge takes the provided values, and attempts to place them in the
@@ -238,10 +197,10 @@ export class Destination {
     this.locationDescriptor.merge(table, value);
 }
 
-export class SingleParamFunctionCall {
+class SingleParamFunctionCall {
   private readonly locationDescriptor: ValueProvider;
 
-  constructor(ast: IToken) {
+  constructor(ast: IToken, table: Table) {
     if (ast.type !== 'destination') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
@@ -256,7 +215,7 @@ export class SingleParamFunctionCall {
     // TODO: Parse the function
 
     const paramChild = ast.children[0];
-    this.locationDescriptor = newValueProvider(paramChild);
+    this.locationDescriptor = newValueProvider(paramChild, table);
   }
 
   public readonly getValue = (table: Table): Value => {
@@ -268,14 +227,14 @@ export class SingleParamFunctionCall {
   };
 }
 
-const newValueProvider = (ast: IToken): ValueProvider => {
+const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
   switch (ast.type) {
     case 'range':
-      return new Range(ast);
+      return newRange(ast, table);
     case 'component':
-      return new Component(ast);
+      return newComponent(ast, table);
     case 'single_param_function_call':
-      return new SingleParamFunctionCall(ast);
+      return new SingleParamFunctionCall(ast, table);
     case 'conditional_function_call':
       throw Error('Source.conditional_function_call not implemented');
     case 'algebraic_operation':
@@ -285,8 +244,12 @@ const newValueProvider = (ast: IToken): ValueProvider => {
   }
 };
 
-export const parseFormulaLines = (lines: string[]): Formula[] =>
-  flatMap(lines, (line) => parseFormula(line));
+export const parseAndApply = (formulaLines: string[], table: Table): Table => {
+  const formulas = flatMap(formulaLines, (line) => parseFormula(line, table));
+  return formulas.reduce((prevTable, formula) => {
+    return formula.merge(table);
+  }, table);
+};
 
 /**
  * Parse the provided line, returning any found formulas. A single line may
@@ -294,13 +257,9 @@ export const parseFormulaLines = (lines: string[]): Formula[] =>
  *
  * @param line A line of the form `<!-- TBFM: {FORMULA}::{FORMULA} -->`
  */
-export const parseFormula = (line: string, printAST = false): Formula[] => {
+export const parseFormula = (line: string, table: Table): Formula[] => {
   const parser = new Grammars.W3C.Parser(parserGrammar);
   const ast = parser.getAST(line);
-
-  if (printAST) {
-    prettyPrintAST(ast);
-  }
 
   if (ast.type !== 'tblfm_line') {
     console.error('Unexpected root element of type ' + ast.type);
@@ -318,7 +277,7 @@ export const parseFormula = (line: string, printAST = false): Formula[] => {
   const formulas = ast.children[0].children;
   console.debug(`Parsing ${formulas.length} formulas...`);
 
-  return formulas.map((formula) => new Formula(formula));
+  return formulas.map((formula) => new Formula(formula, table));
 };
 
 const prettyPrintAST = (token: IToken, level = 0): void => {
