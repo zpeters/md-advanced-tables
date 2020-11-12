@@ -125,6 +125,116 @@ describe('Formulas', () => {
   });
 
   it('should work with relative cell and row references', () => {
-    // TODO
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '| 5 | 6 | 9 | 0 |',
+        '<!-- TBLFM: @I+1=@> -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 5   | 6   | 9   | 0   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 5   | 6   | 9   | 0   |',
+        '<!-- TBLFM: @I+1=@> -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '| 5 | 6 | 9 | 0 |',
+        '<!-- TBLFM: @>$>=@<+2$< -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 5   | 6   | 9   | 1   |',
+        '<!-- TBLFM: @>$>=@<+2$< -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '| 5 | 6 | 9 | 0 |',
+        '<!-- TBLFM: @>$>..@>-1$>-1=@I+2$<..@I+1$<+1 -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 1   | 2   |',
+        '| 5   | 6   | 3   | 4   |',
+        '<!-- TBLFM: @>$>..@>-1$>-1=@I+2$<..@I+1$<+1 -->',
+      ]);
+    }
+  });
+
+  it('should return an error if the formula is invalid', () => {
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '| 5 | 6 | 9 | 0 |',
+        '<!-- TBLFM: @>$>..@>-1$>-1=@I+2$<..@I+1$I+1 -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 5   | 6   | 9   | 0   |',
+        '<!-- TBLFM: @>$>..@>-1$>-1=@I+2$<..@I+1$I+1 -->',
+      ]);
+    }
   });
 });

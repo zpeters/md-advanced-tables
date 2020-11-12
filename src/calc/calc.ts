@@ -261,6 +261,14 @@ export const parseFormula = (line: string, table: Table): Formula[] => {
   const parser = new Grammars.W3C.Parser(parserGrammar);
   const ast = parser.getAST(line);
 
+  // TODO: Determine how to return errors when a formula-like string
+  //       is not actually a valid formula.
+
+  if (!ast) {
+    console.error('Provided formula is invalid');
+    return [];
+  }
+
   if (ast.type !== 'tblfm_line') {
     console.error('Unexpected root element of type ' + ast.type);
     return [];

@@ -76,7 +76,7 @@ export const newColumn = (ast: IToken, table: Table): AbsoluteColumn => {
   switch (child.type) {
     case 'real':
       return new AbsoluteColumn(child);
-    case 'relative_row':
+    case 'relative_column':
       return relativeColumnAsAbsoluteColumn(child, table);
     default:
       throw Error('Unexpected column type ' + child.type);
@@ -91,35 +91,44 @@ const relativeColumnAsAbsoluteColumn = (
     throw Error('Invalid AST token type of ' + ast.type);
   }
 
-  let anchor = ColumnSymbol.First;
+  if (ast.children.length > 1) {
+    throw Error('Unexpected children length in RelativeColumn');
+  }
+
+  let offset = 0;
+  if (ast.children.length === 1) {
+    const child = ast.children[0];
+    if (child.type !== 'offset') {
+      throw Error('Unexpected child type in RelativeRow of ' + child.type);
+    }
+    offset = +child.text;
+  }
+
+  // Values used below have been converted to zero offset
+
   switch (ast.text[0]) {
     case ColumnSymbol.First:
-      anchor = ColumnSymbol.First;
-      break;
+      return new AbsoluteColumn(0 + offset);
     case ColumnSymbol.Last:
-      anchor = ColumnSymbol.Last;
-      break;
-      break;
+      return new AbsoluteColumn(table.getWidth() - 1 + offset);
     default:
       throw Error('Invalid relative column symbol');
   }
-
-  if (ast.children.length !== 1) {
-    throw Error('Unexpected children length in RelativeColumn');
-  }
-  const child = ast.children[0];
-  if (child.type !== 'offset') {
-    throw Error('Unexpected child type in RelativeColumn of ' + child.type);
-  }
-  const offset = +child.text;
-
-  throw Error('relativeColumnAsAbsoluteColumn not implemented');
 };
 
 class AbsoluteColumn {
   public readonly index: number;
 
-  constructor(ast: IToken) {
+  constructor(ast: IToken);
+  constructor(index: number);
+  constructor(value: IToken | number) {
+    if (typeof value === 'number') {
+      this.index = value;
+      return;
+    }
+
+    const ast = value;
+
     if (ast.type !== 'real') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
@@ -166,37 +175,49 @@ const relativeRowAsAbsoluteRow = (ast: IToken, table: Table): AbsoluteRow => {
     throw Error('Invalid AST token type of ' + ast.type);
   }
 
-  let anchor = RowSymbol.First;
+  if (ast.children.length > 1) {
+    throw Error('Unexpected children length in RelativeRow');
+  }
+
+  let offset = 0;
+  if (ast.children.length === 1) {
+    const child = ast.children[0];
+    if (child.type !== 'offset') {
+      throw Error('Unexpected child type in RelativeRow of ' + child.type);
+    }
+    offset = +child.text;
+  }
+
+  // Values used below have been converted to zero offset
+
   switch (ast.text[0]) {
     case RowSymbol.First:
-      anchor = RowSymbol.First;
-      break;
+      return new AbsoluteRow(0 + offset);
     case RowSymbol.Last:
-      anchor = RowSymbol.Last;
-      break;
+      return new AbsoluteRow(table.getHeight() - 1 + offset);
     case RowSymbol.Header:
-      anchor = RowSymbol.Header;
-      break;
+      if (table.getRows().length >= 2) {
+        return new AbsoluteRow(1 + offset);
+      }
+      throw Error('Table does not have a heading delimiter line');
     default:
       throw Error('Invalid relative row symbol');
   }
-
-  if (ast.children.length !== 1) {
-    throw Error('Unexpected children length in RelativeRow');
-  }
-  const child = ast.children[0];
-  if (child.type !== 'offset') {
-    throw Error('Unexpected child type in RelativeRow of ' + child.type);
-  }
-  const offset = +child.text;
-
-  throw Error('relativeRowAsAbsoluteRow not implemented');
 };
 
 class AbsoluteRow {
   public readonly index: number;
 
-  constructor(ast: IToken) {
+  constructor(index: number);
+  constructor(ast: IToken);
+  constructor(value: IToken | number) {
+    if (typeof value === 'number') {
+      this.index = value;
+      return;
+    }
+
+    const ast = value;
+
     if (ast.type !== 'real') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
