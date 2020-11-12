@@ -2,7 +2,7 @@ import { IToken } from 'ebnf';
 import { map, range } from 'lodash';
 import { Table } from '../table';
 import { Value, Arity } from './calc';
-import { newColumn, newRow } from './component';
+import { newComponent } from './component';
 
 export interface Cell {
   row: number;
@@ -10,8 +10,8 @@ export interface Cell {
 }
 
 export class Range {
-  private readonly cellTL: Cell; // top left
-  private readonly cellBR: Cell; // bottom right
+  public readonly cellTL: Cell; // top left
+  public readonly cellBR: Cell; // bottom right
 
   constructor(cell1: Cell, cell2: Cell) {
     let minRow = Math.min(cell1.row, cell2.row);
@@ -71,17 +71,36 @@ export const newRange = (ast: IToken, table: Table): Range => {
   if (ast.type !== 'range') {
     throw Error('Invalid AST token type of ' + ast.type);
   }
-  if (ast.children.length !== 4) {
-    throw Error('Unexpected children length in Range');
+  if (ast.children.length !== 2) {
+    throw Error('Unexpected children length in Range: ' + ast.children.length);
   }
 
-  const startRow = newRow(ast.children[0], table);
-  const startCol = newColumn(ast.children[1], table);
-  const endRow = newRow(ast.children[2], table);
-  const endCol = newColumn(ast.children[3], table);
+  // TODO: A range may not be a cell to a cell
+  // @2$3..@3$4
+  // @2..@>
+  // $1..$2
+  // But you can not have mismatch
+  // @2$3..@3
+  // @2..$3
+
+  const start = newComponent(ast.children[0], table);
+  const end = newComponent(ast.children[1], table);
+
+  return newRangeBetween(start, end, table);
+};
+
+/**
+ * newRangeBetween creates a single Range which encompases the two provided.
+ */
+const newRangeBetween = (start: Range, end: Range, table: Table): Range => {
+  const topRow = Math.min(start.cellTL.row, end.cellTL.row);
+  const leftCol = Math.min(start.cellTL.column, end.cellTL.column);
+
+  const bottomRow = Math.max(start.cellBR.row, end.cellBR.row);
+  const rightCol = Math.max(start.cellBR.column, end.cellBR.column);
 
   return new Range(
-    { row: startRow.index, column: startCol.index },
-    { row: endRow.index, column: endCol.index },
+    { row: topRow, column: leftCol },
+    { row: bottomRow, column: rightCol },
   );
 };

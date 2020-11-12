@@ -237,4 +237,122 @@ describe('Formulas', () => {
       ]);
     }
   });
+
+  it('should support inferred row or column values in the source', () => {
+    // Destinations must always be well defined,
+    // but the source can be ambiguous, requiring knowledge about the destination
+  });
+
+  it('should support single parameter function calls', () => {
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        // also, add a test for function arity!
+        '<!-- TBLFM: @>$>=sum(@I+1..@>-1) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '|     | 10  |',
+        '<!-- TBLFM: @>$>=sum(@I+1..@>-1) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        '<!-- TBLFM: @>=vsum(@I+1..@>-1) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '| 4   | 6   |',
+        '<!-- TBLFM: @>=vsum(@I+1..@>-1) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        // also, add a test for function arity!
+        '<!-- TBLFM: @>$>=mean(@I+1..@>-1) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '|     | 2.5 |',
+        '<!-- TBLFM: @>$>=mean(@I+1..@>-1) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        '<!-- TBLFM: @>=vmean(@I+1..@>-1) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '| 2   | 3   |',
+        '<!-- TBLFM: @>=vmean(@I+1..@>-1) -->',
+      ]);
+    }
+  });
 });

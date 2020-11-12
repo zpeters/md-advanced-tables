@@ -3,9 +3,13 @@ import { newComponent } from './component';
 import { newRange, Range } from './range';
 import { Grammars, IToken } from 'ebnf';
 import { flatMap, isEqual } from 'lodash';
+import { SingleParamFunctionCall } from './single_param_function';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
+// TODO: Add support for @-n as a shorthand for @>-(n-1)
+// TODO: Add a test to check that arity of source and destination matches when calling aggregating functions
+// TODO: Add tests with multiple functions. Ensure applied sequentially.
 
 /**
  * W3C grammar describing a valid formula at the bottom of a table.
@@ -17,14 +21,14 @@ import { flatMap, isEqual } from 'lodash';
  * order of constructions is significant.
  * See https://github.com/lys-lang/node-ebnf/issues/34
  */
-export const parserGrammar = `
+const parserGrammar = `
 tblfm_line ::= "<!-- TBLFM: " formula_list " -->"
 formula_list ::= formula ( "::" formula_list )?
 formula ::= destination "=" source display_directive?
 destination ::=  range | component
 source ::= range | component | single_param_function_call | conditional_function_call | algebraic_operation
 
-range ::= row column ".." row column
+range ::= component ".." component
 component ::= row column | row | column
 row ::= "@" ( real | relative_row )
 column ::= "$" ( real | relative_column )
@@ -32,9 +36,8 @@ relative_row ::= ( "<" | ">" | "I" ) offset?
 relative_column ::= ( "<" | ">" ) offset?
 offset ::= ( "-" | "+" ) int
 
-single_param_function_call ::= single_param_function "(" parameter ")"
-single_param_function ::= "mean" | "sum" | "exp" | "tan" | "sin" | "cos" 
-parameter ::= range | component
+single_param_function_call ::= single_param_function "(" source ")"
+single_param_function ::= "mean" | "vmean" | "sum" | "vsum"
 
 conditional_function_call ::= "if(" predicate ", " source ", " source ")"
 predicate ::= source conditional_operator source
@@ -57,22 +60,13 @@ enum Operator {
   Minus = 'minus',
 }
 
-enum Func {
-  Mean = 'mean',
-  Sum = 'sum',
-  Exp = 'exp',
-  Tan = 'tan',
-  Sin = 'sin',
-  Cos = 'cos',
-}
-
 export interface Arity {
   rows: number;
   cols: number;
 }
 
 export class Value {
-  private readonly val: string[][];
+  public readonly val: string[][];
 
   constructor(val: string[][]) {
     this.val = val;
@@ -109,37 +103,21 @@ export class Formula {
   }
 
   public merge = (table: Table): Table => {
-    // TODO: Change functions from vmean to mean, mode, min, etc.
-
-    // Source needs to be evaluated from the inside, out
-    // For example, @2$3=sum($4 * 2)
-
-    // TODO: Grammar does not allow for the function above.
-
-    // Recursively evaluate from the inside out.
-    // Each action pulls data from the table, and stores in a local matrix.
-    // Operations can be performed on the matrix as necessary,
-    //   producing another matrix of the same dimensions, or a single value.
-    // A parent operation consumes the two child matrices.
-    //   Arity of the child matricies should be checked, and rejected if mismatched.
-    // Repeat recursively up to the root.
-    // The destination then compares the arity of the final source matrix.
-    //   If one value, it can be assigned to a cell or range
-    //   If a range, it can only be assigned to a range of matching dimensions.
-
     const value = this.source.getValue(table);
 
     const valueArity = value.getArity();
     const destArity = this.destination.getArity(table);
     if (!isEqual(valueArity, destArity)) {
-      throw Error('Source and destination arity mismatch');
+      console.log(`Destination arity: ${destArity.rows}, ${destArity.cols}`);
+      console.log(`Value arity: ${valueArity.rows}, ${valueArity.cols}`);
+      throw Error(`Source and destination arity mismatch`);
     }
 
     return this.destination.merge(table, value);
   };
 }
 
-class Source {
+export class Source {
   private readonly locationDescriptor: ValueProvider;
 
   constructor(ast: IToken, table: Table) {
@@ -158,7 +136,7 @@ class Source {
     this.locationDescriptor.getValue(table);
 }
 
-class Destination {
+export class Destination {
   private readonly locationDescriptor: Range;
 
   constructor(ast: IToken, table: Table) {
@@ -197,37 +175,9 @@ class Destination {
     this.locationDescriptor.merge(table, value);
 }
 
-class SingleParamFunctionCall {
-  private readonly locationDescriptor: ValueProvider;
-
-  constructor(ast: IToken, table: Table) {
-    if (ast.type !== 'destination') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-    if (ast.children.length !== 2) {
-      throw Error('Unexpected children length in SingleParamFunctionCall');
-    }
-
-    const functionChild = ast.children[0];
-    console.log(functionChild.text);
-    // "mean" | "sum" | "exp" | "tan" | "sin" | "cos"
-
-    // TODO: Parse the function
-
-    const paramChild = ast.children[0];
-    this.locationDescriptor = newValueProvider(paramChild, table);
-  }
-
-  public readonly getValue = (table: Table): Value => {
-    const inputData = this.locationDescriptor.getValue(table);
-
-    // TODO: Now operate on this input data
-
-    throw Error('Not implemented');
-  };
-}
-
 const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
+  // TODO: ValueProviders should make use of destination to handle implied arity
+
   switch (ast.type) {
     case 'range':
       return newRange(ast, table);
@@ -247,7 +197,7 @@ const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
 export const parseAndApply = (formulaLines: string[], table: Table): Table => {
   const formulas = flatMap(formulaLines, (line) => parseFormula(line, table));
   return formulas.reduce((prevTable, formula) => {
-    return formula.merge(table);
+    return formula.merge(prevTable);
   }, table);
 };
 
