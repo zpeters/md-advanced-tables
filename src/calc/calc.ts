@@ -5,6 +5,7 @@ import { Grammars, IToken } from 'ebnf';
 import { flatMap, isEqual } from 'lodash';
 import { SingleParamFunctionCall } from './single_param_function';
 import { ConditionalFunctionCall } from './conditional_function';
+import { AlgebraicOperation } from './algebraic_operation';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
@@ -55,11 +56,6 @@ formatting_directive ::= "%." int "f"
 real ::= '-'? int
 int ::= [0-9]+
 `;
-
-enum Operator {
-  Plus = 'plus',
-  Minus = 'minus',
-}
 
 export interface Arity {
   rows: number;
@@ -189,7 +185,7 @@ const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
     case 'conditional_function_call':
       return new ConditionalFunctionCall(ast, table);
     case 'algebraic_operation':
-      throw Error('Source.algebraic_operation not implemented');
+      return new AlgebraicOperation(ast, table);
     default:
       throw Error('Unrecognized valueProvider type ' + ast.type);
   }

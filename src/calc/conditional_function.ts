@@ -45,7 +45,13 @@ class Predicate {
       throw Error('Unexpected children length in Predicate');
     }
 
+    if (ast.children[1].type !== 'conditional_operator') {
+      throw Error(
+        'Unexpected type for conditional operator: ' + ast.children[1].type,
+      );
+    }
     this.operator = ast.children[1].text;
+
     this.leftSource = new Source(ast.children[0], table);
     this.rightSource = new Source(ast.children[2], table);
   }
