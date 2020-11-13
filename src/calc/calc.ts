@@ -4,6 +4,7 @@ import { newRange, Range } from './range';
 import { Grammars, IToken } from 'ebnf';
 import { flatMap, isEqual } from 'lodash';
 import { SingleParamFunctionCall } from './single_param_function';
+import { ConditionalFunctionCall } from './conditional_function';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
@@ -186,7 +187,7 @@ const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
     case 'single_param_function_call':
       return new SingleParamFunctionCall(ast, table);
     case 'conditional_function_call':
-      throw Error('Source.conditional_function_call not implemented');
+      return new ConditionalFunctionCall(ast, table);
     case 'algebraic_operation':
       throw Error('Source.algebraic_operation not implemented');
     default:

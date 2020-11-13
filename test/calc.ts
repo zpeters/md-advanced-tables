@@ -355,4 +355,115 @@ describe('Formulas', () => {
       ]);
     }
   });
+
+  it('should support conditional operators', () => {
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        '<!-- TBLFM: @>$1=if(@3$1>@3$2, @4$1, @4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '| 4   |     |',
+        '<!-- TBLFM: @>$1=if(@3$1>@3$2, @4$1, @4$2) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        '<!-- TBLFM: @>$1=if(@3$1<@3$2, @4$1, @4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '| 3   |     |',
+        '<!-- TBLFM: @>$1=if(@3$1<@3$2, @4$1, @4$2) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        '<!-- TBLFM: @>=if(@3$1!=@3$2, vsum(@3..@4), @4) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '| 4   | 6   |',
+        '<!-- TBLFM: @>=if(@3$1!=@3$2, vsum(@3..@4), @4) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '| 3 | 4 |',
+        '|   |   |',
+        '<!-- TBLFM: @>=if(@3$1==@3$2, vsum(@3..@4), @4) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   |',
+        '| --- | --- |',
+        '| 1   | 2   |',
+        '| 3   | 4   |',
+        '| 3   | 4   |',
+        '<!-- TBLFM: @>=if(@3$1==@3$2, vsum(@3..@4), @4) -->',
+      ]);
+    }
+  });
 });
