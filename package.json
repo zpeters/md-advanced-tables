@@ -51,6 +51,7 @@
     "@rollup/plugin-typescript": "6.1.0",
     "@types/chai": "4.2.14",
     "@types/expect": "24.3.0",
+    "@types/lodash": "4.14.165",
     "@types/mocha": "8.0.3",
     "@typescript-eslint/eslint-plugin": "4.6.1",
     "@typescript-eslint/parser": "4.6.1",
@@ -77,7 +78,6 @@
     "typescript": "4.0.5"
   },
   "dependencies": {
-    "@types/lodash": "4.14.165",
     "ebnf": "1.9.0",
     "lodash": "4.17.20",
     "meaw": "^4.3.0"
