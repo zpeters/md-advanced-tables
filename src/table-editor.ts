@@ -221,12 +221,15 @@ export class TableEditor {
    * @param func - A function that does some operation on table information obtained by
    * {@link TableEditor#_findTable}.
    */
-  _withTable(options: Options, func: (tableInfo: TableInfo) => void): void {
+  _withTable<T>(
+    options: Options,
+    func: (tableInfo: TableInfo) => T,
+  ): T | undefined {
     const info = this._findTable(options);
     if (info === undefined) {
       return;
     }
-    func(info);
+    return func(info);
   }
 
   /**
@@ -813,18 +816,27 @@ export class TableEditor {
     );
   }
 
-  public evaluateFormulas(options: Options): void {
-    this.withCompletedTable(
+  public evaluateFormulas(options: Options): Error | undefined {
+    return this.withCompletedTable(
       options,
-      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
-        const newTable: Table = table.applyFormulas(formulaLines);
+      ({
+        range,
+        lines,
+        formulaLines,
+        table,
+        focus,
+      }: TableInfo): Error | undefined => {
+        const result = table.applyFormulas(formulaLines);
+        if (result.isErr()) {
+          return result.error;
+        }
 
         const { table: formattedTable, focus: newFocus } = this.formatAndApply(
           options,
           range,
           lines,
           formulaLines,
-          newTable,
+          result.value,
           focus,
           false,
         );
@@ -1110,27 +1122,30 @@ export class TableEditor {
    * @param func - A function that does some operation on table information obtained by
    * {@link TableEditor#_findTable}.
    */
-  private withCompletedTable(
+  private withCompletedTable<T>(
     options: Options,
-    func: (tableInfo: TableInfo) => void,
-  ): void {
-    this._withTable(options, (tableInfo: TableInfo) => {
-      let newFocus = tableInfo.focus;
-      // complete
-      const completed = completeTable(tableInfo.table, options);
-      if (completed.delimiterInserted && newFocus.row > 0) {
-        newFocus = newFocus.setRow(newFocus.row + 1);
-      }
-      // format
-      const formatted = formatTable(completed.table, options);
-      newFocus = newFocus.setOffset(
-        _computeNewOffset(newFocus, completed.table, formatted, false),
-      );
+    func: (tableInfo: TableInfo) => T,
+  ): T | undefined {
+    return this._withTable(
+      options,
+      (tableInfo: TableInfo): T => {
+        let newFocus = tableInfo.focus;
+        // complete
+        const completed = completeTable(tableInfo.table, options);
+        if (completed.delimiterInserted && newFocus.row > 0) {
+          newFocus = newFocus.setRow(newFocus.row + 1);
+        }
+        // format
+        const formatted = formatTable(completed.table, options);
+        newFocus = newFocus.setOffset(
+          _computeNewOffset(newFocus, completed.table, formatted, false),
+        );
 
-      tableInfo.table = formatted.table;
-      tableInfo.focus = newFocus;
-      func(tableInfo);
-    });
+        tableInfo.table = formatted.table;
+        tableInfo.focus = newFocus;
+        return func(tableInfo);
+      },
+    );
   }
 
   /**

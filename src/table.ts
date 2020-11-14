@@ -1,5 +1,6 @@
-import { Formula, parseAndApply } from './calc/calc';
+import { parseAndApply } from './calc/calc';
 import { Focus } from './focus';
+import { Result } from './neverthrow/neverthrow';
 import { Point } from './point';
 import { Range } from './range';
 import { TableCell } from './table-cell';
@@ -227,8 +228,7 @@ export class Table {
    * Evaluate the formula, applying the results to this table and returning the
    * changes as a new table.
    */
-  public applyFormulas(formulaLines: string[]): Table {
-    // TODO: Add tests in test/table.ts
+  public applyFormulas(formulaLines: string[]): Result<Table, Error> {
     return parseAndApply(formulaLines, this);
   }
 }

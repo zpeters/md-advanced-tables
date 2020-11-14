@@ -2,10 +2,11 @@ import { Table } from '../table';
 import { newComponent } from './component';
 import { newRange, Range } from './range';
 import { Grammars, IToken } from 'ebnf';
-import { flatMap, isEqual } from 'lodash';
+import { concat } from 'lodash';
 import { SingleParamFunctionCall } from './single_param_function';
 import { ConditionalFunctionCall } from './conditional_function';
 import { AlgebraicOperation } from './algebraic_operation';
+import { err, ok, Result } from '../neverthrow/neverthrow';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
@@ -210,11 +211,36 @@ const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
   }
 };
 
-export const parseAndApply = (formulaLines: string[], table: Table): Table => {
-  const formulas = flatMap(formulaLines, (line) => parseFormula(line, table));
-  return formulas.reduce((prevTable, formula) => {
-    return formula.merge(prevTable);
-  }, table);
+export const parseAndApply = (
+  formulaLines: string[],
+  table: Table,
+): Result<Table, Error> => {
+  // Parse each formula line, flattening the resulting lists of formulas into a
+  // single list, but returning an error if any formula fails to parse.
+  const formulas: Result<Formula[], Error> = formulaLines.reduce(
+    (
+      prev: Result<Formula[], Error>,
+      formulaLine: string,
+    ): Result<Formula[], Error> => {
+      return prev.andThen(
+        (currentFormulas: Formula[]): Result<Formula[], Error> => {
+          const newFormulas = parseFormula(formulaLine, table);
+          if (newFormulas.isErr()) {
+            return newFormulas;
+          }
+
+          return ok(concat(newFormulas.value, currentFormulas));
+        },
+      );
+    },
+    ok([]),
+  );
+
+  return formulas.andThen((formulas: Formula[]) =>
+    ok(
+      formulas.reduce((prevTable, formula) => formula.merge(prevTable), table),
+    ),
+  );
 };
 
 /**
@@ -223,7 +249,10 @@ export const parseAndApply = (formulaLines: string[], table: Table): Table => {
  *
  * @param line A line of the form `<!-- TBFM: {FORMULA}::{FORMULA} -->`
  */
-export const parseFormula = (line: string, table: Table): Formula[] => {
+export const parseFormula = (
+  line: string,
+  table: Table,
+): Result<Formula[], Error> => {
   const parser = new Grammars.W3C.Parser(parserGrammar);
   const ast = parser.getAST(line);
 
@@ -231,27 +260,43 @@ export const parseFormula = (line: string, table: Table): Formula[] => {
   //       is not actually a valid formula.
 
   if (!ast) {
-    console.error('Provided formula is invalid');
-    return [];
+    return err(new Error(`Formula '${line}' could not be parsed`));
   }
 
-  if (ast.type !== 'tblfm_line') {
-    console.error('Unexpected root element of type ' + ast.type);
-    return [];
+  let typeError = checkType(ast, 'tblfm_line');
+  if (typeError) {
+    return err(typeError);
   }
 
-  if (ast.children.length !== 1) {
-    console.error(
-      'Unexpected number of formula_list element in root: ' +
-        ast.children.length,
-    );
-    return [];
+  let lengthError = checkChildLength(ast, 1);
+  if (lengthError) {
+    return err(lengthError);
   }
 
   const formulas = ast.children[0].children;
-  console.debug(`Parsing ${formulas.length} formulas...`);
+  return ok(formulas.map((formula) => new Formula(formula, table)));
+};
 
-  return formulas.map((formula) => new Formula(formula, table));
+const checkType = (ast: IToken, expectedType: string): Error | undefined => {
+  if (ast.type === expectedType) {
+    return;
+  }
+
+  return new Error(
+    `Formula element '${ast.text}' is a ${ast.type} but expected ` +
+      `a ${expectedType} in this position.`,
+  );
+};
+
+const checkChildLength = (ast: IToken, len: number): Error | undefined => {
+  if (ast.children.length === len) {
+    return;
+  }
+
+  return new Error(
+    `Formula element '${ast.text}' was expected to have ${len} ` +
+      `elements, but had ${ast.children.length}`,
+  );
 };
 
 const prettyPrintAST = (token: IToken, level = 0): void => {
