@@ -1,4 +1,5 @@
 import { IToken } from 'ebnf';
+import { map } from 'lodash';
 import { Table } from '..';
 import { Source, Value } from './calc';
 
@@ -41,19 +42,86 @@ export class AlgebraicOperation {
     }
   };
 
+  /**
+   * withCellAndRange aids in performing a numeric operation on cells in a
+   * table where at least one of the two operands is a single cell. Optionally,
+   * the two sides of the operation can be swapped, so the single cell is
+   * always on the right.
+   */
+  private withCellAndRange = (
+    table: Table,
+    name: string,
+    canFlip: boolean,
+    fn: (left: number, right: number) => number,
+  ): Value => {
+    let leftValue = this.leftSource.getValue(table);
+    let rightValue = this.rightSource.getValue(table);
+
+    const leftArity = leftValue.getArity();
+    const rightArity = rightValue.getArity();
+
+    if (!rightArity.isCell()) {
+      if (canFlip) {
+        if (leftArity.isCell()) {
+          [leftValue, rightValue] = [rightValue, leftValue];
+        } else {
+          throw Error(
+            `At least one operand in algebraic "${name}" must be a single cell.`,
+          );
+        }
+      } else {
+        throw Error(
+          `Right operand in algebraic "${name}" must be a single cell.`,
+        );
+      }
+    }
+    const rightCellValue = parseFloat(rightValue.get(0, 0));
+
+    const result: string[][] = map(
+      leftValue.val,
+      (currentRow: string[]): string[] => {
+        return map(currentRow, (currentCell: string): string => {
+          const leftCellValue = parseFloat(currentCell);
+          return fn(leftCellValue, rightCellValue).toString();
+        });
+      },
+    );
+    return new Value(result);
+  };
+
   private add = (table: Table): Value => {
-    throw Error('Algebraic operator "add" is not yet implemented');
+    return this.withCellAndRange(
+      table,
+      'add',
+      true,
+      (left, right): number => left + right,
+    );
   };
 
   private subtract = (table: Table): Value => {
-    throw Error('Algebraic operator "subtract" is not yet implemented');
+    return this.withCellAndRange(
+      table,
+      'subtract',
+      false,
+      (left, right): number => left - right,
+    );
   };
 
   private multiply = (table: Table): Value => {
-    throw Error('Algebraic operator "multiply" is not yet implemented');
+    return this.withCellAndRange(
+      table,
+      'multiply',
+      true,
+      (left, right): number => left * right,
+    );
   };
 
   private divide = (table: Table): Value => {
-    throw Error('Algebraic operator "divide" is not yet implemented');
+    return this.withCellAndRange(
+      table,
+      'divide',
+      false,
+      (left, right): number => left / right,
+    );
   };
 }

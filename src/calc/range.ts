@@ -39,10 +39,10 @@ export class Range {
    */
   public readonly getArity = (): Arity => {
     // cellBR is inclusive, so add 1 to each dimension
-    return {
-      rows: this.cellBR.row - this.cellTL.row + 1,
-      cols: this.cellBR.column - this.cellTL.column + 1,
-    };
+    return new Arity(
+      this.cellBR.row - this.cellTL.row + 1,
+      this.cellBR.column - this.cellTL.column + 1,
+    );
   };
 
   /**

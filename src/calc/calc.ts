@@ -45,9 +45,8 @@ conditional_function_call ::= "if(" predicate ", " source ", " source ")"
 predicate ::= source conditional_operator source
 conditional_operator ::= ">" | "<" | ">=" | "<=" | "==" | "!="
 
-algebraic_operation ::= algebraic_operand " "? algebraic_operator " "? algebraic_operand
+algebraic_operation ::= "(" source " "? algebraic_operator " "? source ")"
 algebraic_operator ::= "+" | "-" | "*" | "/"
-algebraic_operand ::= component | single_param_function_call | conditional_function_call | ( "(" algebraic_operation ")" )
 
 display_directive ::= ";" display_directive_option
 display_directive_option ::= formatting_directive
@@ -57,9 +56,26 @@ real ::= '-'? int
 int ::= [0-9]+
 `;
 
-export interface Arity {
-  rows: number;
-  cols: number;
+export class Arity {
+  public rows: number;
+  public cols: number;
+
+  constructor(rows: number, columns: number) {
+    this.rows = rows;
+    this.cols = columns;
+  }
+
+  public isRow = (): boolean => {
+    return this.rows > 1 && this.cols === 1;
+  };
+
+  public isColumn = (): boolean => {
+    return this.rows === 1 && this.cols > 1;
+  };
+
+  public isCell = (): boolean => {
+    return this.rows === 1 && this.cols === 1;
+  };
 }
 
 export class Value {
@@ -82,7 +98,7 @@ export class Value {
         Math.max(max, currentRow.length),
       0,
     );
-    return { rows: this.val.length, cols: maxCols };
+    return new Arity(this.val.length, maxCols);
   };
 }
 
@@ -104,7 +120,10 @@ export class Formula {
 
     const valueArity = value.getArity();
     const destArity = this.destination.getArity(table);
-    if (!isEqual(valueArity, destArity)) {
+    if (
+      valueArity.rows !== destArity.rows ||
+      valueArity.cols !== destArity.cols
+    ) {
       console.log(`Destination arity: ${destArity.rows}, ${destArity.cols}`);
       console.log(`Value arity: ${valueArity.rows}, ${valueArity.cols}`);
       throw Error(`Source and destination arity mismatch`);

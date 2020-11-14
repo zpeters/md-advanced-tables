@@ -466,4 +466,196 @@ describe('Formulas', () => {
       ]);
     }
   });
+
+  it('should support algebraic operations', () => {
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>=(@4$2+@I+1) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 5   | 6   | 9   | 10  |',
+        '<!-- TBLFM: @>=(@4$2+@I+1) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>=(@I+1+@4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 5   | 6   | 9   | 10  |',
+        '<!-- TBLFM: @>=(@I+1+@4$2) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>=(@I+1-@4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| -3  | -2  | 1   | 2   |',
+        '<!-- TBLFM: @>=(@I+1-@4$2) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>=(@I+1 * @4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 4   | 8   | 20  | 24  |',
+        '<!-- TBLFM: @>=(@I+1 * @4$2) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>=(@4$2*@I+1) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 4   | 8   | 20  | 24  |',
+        '<!-- TBLFM: @>=(@4$2*@I+1) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>=(@I+1 / @4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A    | B   | C    | D   |',
+        '| ---- | --- | ---- | --- |',
+        '| 1    | 2   | 5    | 6   |',
+        '| 3    | 4   | 7    | 8   |',
+        '| 0.25 | 0.5 | 1.25 | 1.5 |',
+        '<!-- TBLFM: @>=(@I+1 / @4$2) -->',
+      ]);
+    }
+    {
+      const textEditor = new TextEditor([
+        'foo',
+        '| A | B | C | D |',
+        '| - | - | - | - |',
+        '| 1 | 2 | 5 | 6 |',
+        '| 3 | 4 | 7 | 8 |',
+        '|   |   |   |   |',
+        '<!-- TBLFM: @>$1=(@I+1$3 * @4$2) -->',
+      ]);
+      textEditor.setCursorPosition(new Point(1, 0));
+      const tableEditor = new TableEditor(textEditor);
+      tableEditor.evaluateFormulas(defaultOptions);
+      const pos = textEditor.getCursorPosition();
+      expect(pos.row).to.equal(1);
+      expect(pos.column).to.equal(0);
+      expect(textEditor.getSelectionRange()).to.be.undefined;
+      expect(textEditor.getLines()).to.deep.equal([
+        'foo',
+        '| A   | B   | C   | D   |',
+        '| --- | --- | --- | --- |',
+        '| 1   | 2   | 5   | 6   |',
+        '| 3   | 4   | 7   | 8   |',
+        '| 20  |     |     |     |',
+        '<!-- TBLFM: @>$1=(@I+1$3 * @4$2) -->',
+      ]);
+    }
+  });
 });
