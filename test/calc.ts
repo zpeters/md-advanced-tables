@@ -250,11 +250,6 @@ describe('Formulas', () => {
       }
     });
 
-    it('should support inferred row or column values in the source', () => {
-      // Destinations must always be well defined,
-      // but the source can be ambiguous, requiring knowledge about the destination
-    });
-
     it('should support single parameter function calls', () => {
       {
         const textEditor = new TextEditor([
@@ -485,6 +480,72 @@ describe('Formulas', () => {
           '<!-- TBLFM: @>=if(@3$1==@3$2, vsum(@3..@4), @4) -->',
         ]);
       }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=if(@I==@1$3, @5, @4) -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        const err = tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        if (!err) {
+          assert.fail();
+        }
+        expect(err.message).to.equal(
+          `Can only use comparison operator on a single cell. Left side is not a cell.`,
+        );
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=if(@I==@1$3, @5, @4) -->',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=if(@I+1$3==$3, @5, @4) -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        const err = tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        if (!err) {
+          assert.fail();
+        }
+        expect(err.message).to.equal(
+          `Can only use comparison operator on a single cell. Right side is not a cell.`,
+        );
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=if(@I+1$3==$3, @5, @4) -->',
+        ]);
+      }
     });
 
     it('should support algebraic operations', () => {
@@ -682,6 +743,105 @@ describe('Formulas', () => {
           '| 3   | 4   | 7   | 8   |',
           '| 20  |     |     |     |',
           '<!-- TBLFM: @>$1=(@I+1$3 * @4$2) -->',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=(@I+1 * @4) -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        const err = tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        if (!err) {
+          assert.fail();
+        }
+        expect(err.message).to.equal(
+          `At least one operand in algebraic "multiply" must be a single cell.`,
+        );
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=(@I+1 * @4) -->',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=(@I+1$3 - @4) -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        const err = tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        if (!err) {
+          assert.fail();
+        }
+        expect(err.message).to.equal(
+          `Right operand in algebraic "subtract" must be a single cell.`,
+        );
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=(@I+1$3 - @4) -->',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=(@I+1$3 / @4) -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        const err = tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        if (!err) {
+          assert.fail();
+        }
+        expect(err.message).to.equal(
+          `Right operand in algebraic "divide" must be a single cell.`,
+        );
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A | B | C | D |',
+          '| - | - | - | - |',
+          '| 1 | 2 | 5 | 6 |',
+          '| 3 | 4 | 7 | 8 |',
+          '|   |   |   |   |',
+          '<!-- TBLFM: @>=(@I+1$3 / @4) -->',
         ]);
       }
     });

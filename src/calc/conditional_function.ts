@@ -1,6 +1,7 @@
 import { IToken } from 'ebnf';
+import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { Source, Value } from './calc';
+import { checkChildLength, checkType, Source, Value } from './calc';
 
 export class ConditionalFunctionCall {
   private predicate: Predicate;
@@ -8,26 +9,34 @@ export class ConditionalFunctionCall {
   private rightSource: Source;
 
   constructor(ast: IToken, table: Table) {
-    if (ast.type !== 'conditional_function_call') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-    if (ast.children.length !== 3) {
-      throw Error('Unexpected children length in ConditionalFunctionCall');
+    let typeError = checkType(ast, 'conditional_function_call');
+    if (typeError) {
+      throw typeError;
     }
 
-    if (ast.children[0].type !== 'predicate') {
-      throw Error('Unexpected AST token type of ' + ast.children[0].type);
+    let lengthError = checkChildLength(ast, 3);
+    if (lengthError) {
+      throw lengthError;
     }
 
-    this.predicate = new Predicate(ast.children[0], table);
-    this.leftSource = new Source(ast.children[1], table);
-    this.rightSource = new Source(ast.children[2], table);
+    try {
+      this.predicate = new Predicate(ast.children[0], table);
+      this.leftSource = new Source(ast.children[1], table);
+      this.rightSource = new Source(ast.children[2], table);
+    } catch (error) {
+      // Still in a constructor, so nothing we can do but throw again
+      throw error;
+    }
   }
 
-  public getValue = (table: Table): Value => {
-    return this.predicate.eval(table)
-      ? this.leftSource.getValue(table)
-      : this.rightSource.getValue(table);
+  public getValue = (table: Table): Result<Value, Error> => {
+    return this.predicate
+      .eval(table)
+      .andThen((predicateResult) =>
+        predicateResult
+          ? this.leftSource.getValue(table)
+          : this.rightSource.getValue(table),
+      );
   };
 }
 
@@ -37,61 +46,77 @@ class Predicate {
   private operator: string;
 
   constructor(ast: IToken, table: Table) {
-    if (ast.type !== 'predicate') {
-      throw Error('Invalid AST token type of ' + ast.type);
+    let typeError = checkType(ast, 'predicate');
+    if (typeError) {
+      throw typeError;
     }
 
-    if (ast.children.length !== 3) {
-      throw Error('Unexpected children length in Predicate');
+    let lengthError = checkChildLength(ast, 3);
+    if (lengthError) {
+      throw lengthError;
     }
 
-    if (ast.children[1].type !== 'conditional_operator') {
-      throw Error(
-        'Unexpected type for conditional operator: ' + ast.children[1].type,
-      );
+    let childTypeError = checkType(ast.children[1], 'conditional_operator');
+    if (childTypeError) {
+      throw childTypeError;
     }
     this.operator = ast.children[1].text;
 
-    this.leftSource = new Source(ast.children[0], table);
-    this.rightSource = new Source(ast.children[2], table);
+    try {
+      this.leftSource = new Source(ast.children[0], table);
+      this.rightSource = new Source(ast.children[2], table);
+    } catch (error) {
+      // Still in a constructor, so nothing we can do but throw again
+      throw error;
+    }
   }
 
-  public eval = (table: Table): boolean => {
+  public eval = (table: Table): Result<boolean, Error> => {
     const leftData = this.leftSource.getValue(table);
+    if (leftData.isErr()) {
+      return err(leftData.error);
+    }
     const rightData = this.rightSource.getValue(table);
+    if (rightData.isErr()) {
+      return err(rightData.error);
+    }
 
-    const leftArity = leftData.getArity();
-    const rightArity = rightData.getArity();
+    const leftArity = leftData.value.getArity();
+    const rightArity = rightData.value.getArity();
 
     if (leftArity.cols != 1 || leftArity.rows != 1) {
-      throw Error(
-        'Can only use comparison operator on a single cell. Left side is not a cell.',
+      return err(
+        Error(
+          'Can only use comparison operator on a single cell. Left side is not a cell.',
+        ),
       );
     }
     if (rightArity.cols != 1 || rightArity.rows != 1) {
-      throw Error(
-        'Can only use comparison operator on a single cell. Right side is not a cell.',
+      return err(
+        Error(
+          'Can only use comparison operator on a single cell. Right side is not a cell.',
+        ),
       );
     }
 
-    const leftVal = leftData.val[0][0];
-    const rightVal = rightData.val[0][0];
+    const leftVal = leftData.value.val[0][0];
+    const rightVal = rightData.value.val[0][0];
 
     switch (this.operator) {
       case '>':
-        return leftVal > rightVal;
+        return ok(leftVal > rightVal);
       case '>=':
-        return leftVal >= rightVal;
+        return ok(leftVal >= rightVal);
       case '<':
-        return leftVal < rightVal;
+        return ok(leftVal < rightVal);
       case '<=':
-        return leftVal <= rightVal;
+        return ok(leftVal <= rightVal);
       case '==':
-        return leftVal === rightVal;
+        return ok(leftVal === rightVal);
       case '!=':
-        return leftVal !== rightVal;
+        return ok(leftVal !== rightVal);
       default:
-        throw Error('Invalid conditional operator: ' + this.operator);
+        return err(Error('Invalid conditional operator: ' + this.operator));
     }
   };
 }

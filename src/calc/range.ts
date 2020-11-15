@@ -1,7 +1,8 @@
 import { IToken } from 'ebnf';
 import { map, range } from 'lodash';
+import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { Value, Arity } from './calc';
+import { Value, Arity, checkType, checkChildLength } from './calc';
 import { newComponent } from './component';
 
 export interface Cell {
@@ -23,12 +24,14 @@ export class Range {
     this.cellBR = { row: maxRow, column: maxColumn };
   }
 
-  public readonly getValue = (table: Table): Value => {
-    return new Value(
-      map(range(this.cellTL.row, this.cellBR.row + 1), (row): string[] =>
-        map(
-          range(this.cellTL.column, this.cellBR.column + 1),
-          (col): string => table.getCellAt(row, col)?.toText() || '',
+  public readonly getValue = (table: Table): Result<Value, Error> => {
+    return ok(
+      new Value(
+        map(range(this.cellTL.row, this.cellBR.row + 1), (row): string[] =>
+          map(
+            range(this.cellTL.column, this.cellBR.column + 1),
+            (col): string => table.getCellAt(row, col)?.toText() || '',
+          ),
         ),
       ),
     );
@@ -49,7 +52,10 @@ export class Range {
    * merge takes the provided values, and attempts to place them in the
    * location described by this Range in the provided table.
    */
-  public readonly merge = (table: Table, value: Value): Table => {
+  public readonly merge = (
+    table: Table,
+    value: Value,
+  ): Result<Table, Error> => {
     let newTable = table;
     let valueRow = 0;
     let valueColumn = 0;
@@ -63,16 +69,18 @@ export class Range {
       valueRow++;
     }
 
-    return newTable;
+    return ok(newTable);
   };
 }
 
-export const newRange = (ast: IToken, table: Table): Range => {
-  if (ast.type !== 'range') {
-    throw Error('Invalid AST token type of ' + ast.type);
+export const newRange = (ast: IToken, table: Table): Result<Range, Error> => {
+  const typeErr = checkType(ast, 'range');
+  if (typeErr) {
+    return err(typeErr);
   }
-  if (ast.children.length !== 2) {
-    throw Error('Unexpected children length in Range: ' + ast.children.length);
+  let lengthError = checkChildLength(ast, 2);
+  if (lengthError) {
+    return err(lengthError);
   }
 
   // TODO: A range may not be a cell to a cell
@@ -84,9 +92,15 @@ export const newRange = (ast: IToken, table: Table): Range => {
   // @2..$3
 
   const start = newComponent(ast.children[0], table);
+  if (start.isErr()) {
+    return start;
+  }
   const end = newComponent(ast.children[1], table);
+  if (end.isErr()) {
+    return end;
+  }
 
-  return newRangeBetween(start, end, table);
+  return ok(newRangeBetween(start.value, end.value, table));
 };
 
 /**

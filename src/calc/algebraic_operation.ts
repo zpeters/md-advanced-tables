@@ -1,6 +1,7 @@
 import { IToken } from 'ebnf';
 import { map } from 'lodash';
 import { Table } from '..';
+import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Source, Value } from './calc';
 
 export class AlgebraicOperation {
@@ -23,11 +24,16 @@ export class AlgebraicOperation {
     }
     this.operator = ast.children[1].text;
 
-    this.leftSource = new Source(ast.children[0], table);
-    this.rightSource = new Source(ast.children[2], table);
+    try {
+      this.leftSource = new Source(ast.children[0], table);
+      this.rightSource = new Source(ast.children[2], table);
+    } catch (error) {
+      // Still in a constructor, so nothing we can do but throw again
+      throw error;
+    }
   }
 
-  public getValue = (table: Table): Value => {
+  public getValue = (table: Table): Result<Value, Error> => {
     switch (this.operator) {
       case '+':
         return this.add(table);
@@ -38,7 +44,7 @@ export class AlgebraicOperation {
       case '/':
         return this.divide(table);
       default:
-        throw Error('Invalid algbraic operator: ' + this.operator);
+        return err(Error('Invalid algbraic operator: ' + this.operator));
     }
   };
 
@@ -53,32 +59,40 @@ export class AlgebraicOperation {
     name: string,
     canFlip: boolean,
     fn: (left: number, right: number) => number,
-  ): Value => {
+  ): Result<Value, Error> => {
     let leftValue = this.leftSource.getValue(table);
+    if (leftValue.isErr()) {
+      return err(leftValue.error);
+    }
     let rightValue = this.rightSource.getValue(table);
+    if (rightValue.isErr()) {
+      return err(rightValue.error);
+    }
 
-    const leftArity = leftValue.getArity();
-    const rightArity = rightValue.getArity();
+    const leftArity = leftValue.value.getArity();
+    const rightArity = rightValue.value.getArity();
 
     if (!rightArity.isCell()) {
       if (canFlip) {
         if (leftArity.isCell()) {
           [leftValue, rightValue] = [rightValue, leftValue];
         } else {
-          throw Error(
-            `At least one operand in algebraic "${name}" must be a single cell.`,
+          return err(
+            Error(
+              `At least one operand in algebraic "${name}" must be a single cell.`,
+            ),
           );
         }
       } else {
-        throw Error(
-          `Right operand in algebraic "${name}" must be a single cell.`,
+        return err(
+          Error(`Right operand in algebraic "${name}" must be a single cell.`),
         );
       }
     }
-    const rightCellValue = parseFloat(rightValue.get(0, 0));
+    const rightCellValue = parseFloat(rightValue.value.get(0, 0));
 
     const result: string[][] = map(
-      leftValue.val,
+      leftValue.value.val,
       (currentRow: string[]): string[] => {
         return map(currentRow, (currentCell: string): string => {
           const leftCellValue = parseFloat(currentCell);
@@ -86,10 +100,10 @@ export class AlgebraicOperation {
         });
       },
     );
-    return new Value(result);
+    return ok(new Value(result));
   };
 
-  private add = (table: Table): Value => {
+  private add = (table: Table): Result<Value, Error> => {
     return this.withCellAndRange(
       table,
       'add',
@@ -98,7 +112,7 @@ export class AlgebraicOperation {
     );
   };
 
-  private subtract = (table: Table): Value => {
+  private subtract = (table: Table): Result<Value, Error> => {
     return this.withCellAndRange(
       table,
       'subtract',
@@ -107,7 +121,7 @@ export class AlgebraicOperation {
     );
   };
 
-  private multiply = (table: Table): Value => {
+  private multiply = (table: Table): Result<Value, Error> => {
     return this.withCellAndRange(
       table,
       'multiply',
@@ -116,7 +130,7 @@ export class AlgebraicOperation {
     );
   };
 
-  private divide = (table: Table): Value => {
+  private divide = (table: Table): Result<Value, Error> => {
     return this.withCellAndRange(
       table,
       'divide',

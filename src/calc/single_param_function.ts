@@ -1,22 +1,27 @@
 import { IToken } from 'ebnf';
 import { fill, zipWith } from 'lodash';
+import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { Source, Value } from './calc';
+import { checkChildLength, checkType, Source, Value } from './calc';
 
 export class SingleParamFunctionCall {
   private readonly param: Source;
   private readonly op;
 
   constructor(ast: IToken, table: Table) {
-    if (ast.type !== 'single_param_function_call') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-    if (ast.children.length !== 2) {
-      throw Error('Unexpected children length in SingleParamFunctionCall');
+    let typeError = checkType(ast, 'single_param_function_call');
+    if (typeError) {
+      throw typeError;
     }
 
-    if (ast.children[0].type !== 'single_param_function') {
-      throw Error('Unexpected AST token type of ' + ast.children[0].type);
+    let lengthError = checkChildLength(ast, 2);
+    if (lengthError) {
+      throw lengthError;
+    }
+
+    let childTypeError = checkType(ast.children[0], 'single_param_function');
+    if (childTypeError) {
+      throw childTypeError;
     }
 
     const functionName = ast.children[0].text;
@@ -37,14 +42,20 @@ export class SingleParamFunctionCall {
         throw Error('Unknown single param function call: ' + functionName);
     }
 
-    if (ast.children[1].type !== 'source') {
-      throw Error('Unexpected AST token type of ' + ast.children[0].type);
+    childTypeError = checkType(ast.children[1], 'source');
+    if (childTypeError) {
+      throw childTypeError;
     }
+
     this.param = new Source(ast.children[1], table);
   }
 
-  public getValue = (table: Table): Value => {
-    return this.op(this.param.getValue(table));
+  public getValue = (table: Table): Result<Value, Error> => {
+    return this.param.getValue(table).andThen((sourceData) => {
+      // The operation functions do not throw errors because data arity has
+      // already been validated.
+      return ok(this.op(sourceData));
+    });
   };
 }
 

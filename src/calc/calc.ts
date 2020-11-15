@@ -104,7 +104,7 @@ export class Value {
 }
 
 export interface ValueProvider {
-  getValue(table: Table): Value;
+  getValue(table: Table): Result<Value, Error>;
 }
 
 export class Formula {
@@ -116,10 +116,13 @@ export class Formula {
     this.source = new Source(ast.children[1], table);
   }
 
-  public merge = (table: Table): Table => {
+  public merge = (table: Table): Result<Table, Error> => {
     const value = this.source.getValue(table);
+    if (value.isErr()) {
+      return err(value.error);
+    }
 
-    const valueArity = value.getArity();
+    const valueArity = value.value.getArity();
     const destArity = this.destination.getArity(table);
     if (
       valueArity.rows !== destArity.rows ||
@@ -127,10 +130,10 @@ export class Formula {
     ) {
       console.log(`Destination arity: ${destArity.rows}, ${destArity.cols}`);
       console.log(`Value arity: ${valueArity.rows}, ${valueArity.cols}`);
-      throw Error(`Source and destination arity mismatch`);
+      return err(new Error('Source and destination arity mismatch'));
     }
 
-    return this.destination.merge(table, value);
+    return this.destination.merge(table, value.value);
   };
 }
 
@@ -146,10 +149,14 @@ export class Source {
     }
 
     const paramChild = ast.children[0];
-    this.locationDescriptor = newValueProvider(paramChild, table);
+    const vp = newValueProvider(paramChild, table);
+    if (vp.isErr()) {
+      throw vp.error;
+    }
+    this.locationDescriptor = vp.value;
   }
 
-  public getValue = (table: Table): Value =>
+  public getValue = (table: Table): Result<Value, Error> =>
     this.locationDescriptor.getValue(table);
 }
 
@@ -167,10 +174,18 @@ export class Destination {
     const child = ast.children[0];
     switch (ast.children[0].type) {
       case 'range':
-        this.locationDescriptor = newRange(child, table);
+        const r1 = newRange(child, table);
+        if (r1.isErr()) {
+          throw r1.error;
+        }
+        this.locationDescriptor = r1.value;
         break;
       case 'component':
-        this.locationDescriptor = newComponent(child, table);
+        const r2 = newComponent(child, table);
+        if (r2.isErr()) {
+          throw r2.error;
+        }
+        this.locationDescriptor = r2.value;
         break;
       default:
         throw Error('Unrecognized destination type ' + child.type);
@@ -188,26 +203,33 @@ export class Destination {
    * merge takes the provided values, and attempts to place them in the
    * location described by this Range in the provided table.
    */
-  public readonly merge = (table: Table, value: Value): Table =>
+  public readonly merge = (table: Table, value: Value): Result<Table, Error> =>
     this.locationDescriptor.merge(table, value);
 }
 
-const newValueProvider = (ast: IToken, table: Table): ValueProvider => {
+const newValueProvider = (
+  ast: IToken,
+  table: Table,
+): Result<ValueProvider, Error> => {
   // TODO: ValueProviders should make use of destination to handle implied arity
 
-  switch (ast.type) {
-    case 'range':
-      return newRange(ast, table);
-    case 'component':
-      return newComponent(ast, table);
-    case 'single_param_function_call':
-      return new SingleParamFunctionCall(ast, table);
-    case 'conditional_function_call':
-      return new ConditionalFunctionCall(ast, table);
-    case 'algebraic_operation':
-      return new AlgebraicOperation(ast, table);
-    default:
-      throw Error('Unrecognized valueProvider type ' + ast.type);
+  try {
+    switch (ast.type) {
+      case 'range':
+        return newRange(ast, table);
+      case 'component':
+        return newComponent(ast, table);
+      case 'single_param_function_call':
+        return ok(new SingleParamFunctionCall(ast, table));
+      case 'conditional_function_call':
+        return ok(new ConditionalFunctionCall(ast, table));
+      case 'algebraic_operation':
+        return ok(new AlgebraicOperation(ast, table));
+      default:
+        throw Error('Unrecognized valueProvider type ' + ast.type);
+    }
+  } catch (error) {
+    return err(error);
   }
 };
 
@@ -236,9 +258,20 @@ export const parseAndApply = (
     ok([]),
   );
 
+  // If there is no error,
   return formulas.andThen((formulas: Formula[]) =>
-    ok(
-      formulas.reduce((prevTable, formula) => formula.merge(prevTable), table),
+    // for each formula
+    formulas.reduce<Result<Table, Error>>(
+      (prevValue, formula) =>
+        // If the previous formula didn't give an error
+        prevValue.andThen(
+          (prevTable): Result<Table, Error> => {
+            // attempt to apply this formula to the table and return the result
+            return formula.merge(prevTable);
+          },
+        ),
+      // Start with the current table state
+      ok(table),
     ),
   );
 };
@@ -277,7 +310,10 @@ export const parseFormula = (
   return ok(formulas.map((formula) => new Formula(formula, table)));
 };
 
-const checkType = (ast: IToken, expectedType: string): Error | undefined => {
+export const checkType = (
+  ast: IToken,
+  expectedType: string,
+): Error | undefined => {
   if (ast.type === expectedType) {
     return;
   }
@@ -288,7 +324,10 @@ const checkType = (ast: IToken, expectedType: string): Error | undefined => {
   );
 };
 
-const checkChildLength = (ast: IToken, len: number): Error | undefined => {
+export const checkChildLength = (
+  ast: IToken,
+  len: number,
+): Error | undefined => {
   if (ast.children.length === len) {
     return;
   }
