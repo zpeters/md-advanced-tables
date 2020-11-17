@@ -1,6 +1,6 @@
 {
   "name": "@tgrosinger/md-advanced-tables",
-  "version": "3.2.1",
+  "version": "3.2.3",
   "description": "A text editor independent library for advanced manipulation, formatting, and spreadsheets in markdown tables.",
   "keywords": [
     "markdown",
@@ -22,7 +22,6 @@
     "test": "mocha -r ts-node/register 'test/*.ts'",
     "cover": "nyc -r html -r text npm test",
     "build": "tsc",
-    "prepublishOnly": "run-s lint test build doc",
     "clean": "rimraf .nyc_output coverage dist doc",
     "repl": "ts-node"
   },
