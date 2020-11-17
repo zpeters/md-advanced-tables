@@ -54,7 +54,7 @@ storing it in `@2$>`.
 Just like in org-mode, formulas use symbols to denote rows and columns. In
 the above formula, the destination for our calculated value is `@2$>`. We can
 break this down into `@2` and `$>`, meaning "row 2" and "last column". We'll
-dive into what "last column means in a minute".
+dive into what "last column" means in a minute.
 
 Let's look at the source: `vsum(@I+1$>..@>-1$>)`. Again, if we ignore some of
 the concepts we haven't learned yet, we can identify a few rows and columns
@@ -83,7 +83,7 @@ row. Similarly, `@2$4` means the single cell in row 2, column 4. However what
 if you want to reference only a few cells in one column, or perhaps, a few
 cells in several consecutive columns?
 
-Ranges allow doing just that. A range is denoted by two periods in a row
+Ranges allow for doing just that. A range is denoted by two periods in a row
 between two row and/or columns.
 
 ```md
@@ -110,7 +110,7 @@ input data, providing a single cell as the output.
 
 Since our sum function provided a single cell as its output, and the
 destination is also a single cell, we will say that the arity matches. If we
-used a function that output a row of data, but attempted to put the result in
+used a function that outputs a row of data, but attempted to put the result in
 a single cell, there would be an arity mismatch, and evaluating the formula
 would fail. Similarly, if the function provided a single cell of output and
 we attempted to put it in a range, the evaluation would fail.
@@ -203,12 +203,12 @@ operand may be a range or cell.
 
 - `@2$3-@3$4` - Valid, subtract two cells. Arity `1x1`
 - `@2-@3$4` - Valid, subtract a single cell from each value in the row. Outputs a row.
-- `@3$4-@2` - Invalid, may not sutract a range from a single cell.
+- `@3$4-@2` - Invalid, may not subtract a range from a single cell.
 
 #### Multiply
 
-Multiplication requrires at least one value be a single cell. A formula may
-not mupltiply one range with another range.
+Multiplication requires at least one value be a single cell. A formula may
+not multiply one range with another range.
 
 - `@2$3*@3$4` - Valid, multiplying two cells. Arity `1x1`
 - `@2*@3$4` - Valid, multiply a single cell with each value in the row. Outputs a row.
