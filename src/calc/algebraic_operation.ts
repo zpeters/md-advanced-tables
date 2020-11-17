@@ -1,13 +1,13 @@
-import { IToken } from 'ebnf';
-import { map } from 'lodash';
 import { Table } from '..';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Source, Value } from './calc';
+import { IToken } from 'ebnf';
+import { map } from 'lodash';
 
 export class AlgebraicOperation {
-  private leftSource: Source;
-  private rightSource: Source;
-  private operator: string;
+  private readonly leftSource: Source;
+  private readonly rightSource: Source;
+  private readonly operator: string;
 
   constructor(ast: IToken, table: Table) {
     if (ast.type !== 'algebraic_operation') {
@@ -54,7 +54,7 @@ export class AlgebraicOperation {
    * the two sides of the operation can be swapped, so the single cell is
    * always on the right.
    */
-  private withCellAndRange = (
+  private readonly withCellAndRange = (
     table: Table,
     name: string,
     canFlip: boolean,
@@ -93,49 +93,39 @@ export class AlgebraicOperation {
 
     const result: string[][] = map(
       leftValue.value.val,
-      (currentRow: string[]): string[] => {
-        return map(currentRow, (currentCell: string): string => {
+      (currentRow: string[]): string[] => map(currentRow, (currentCell: string): string => {
           const leftCellValue = parseFloat(currentCell);
           return fn(leftCellValue, rightCellValue).toString();
-        });
-      },
+        }),
     );
     return ok(new Value(result));
   };
 
-  private add = (table: Table): Result<Value, Error> => {
-    return this.withCellAndRange(
+  private readonly add = (table: Table): Result<Value, Error> => this.withCellAndRange(
       table,
       'add',
       true,
       (left, right): number => left + right,
     );
-  };
 
-  private subtract = (table: Table): Result<Value, Error> => {
-    return this.withCellAndRange(
+  private readonly subtract = (table: Table): Result<Value, Error> => this.withCellAndRange(
       table,
       'subtract',
       false,
       (left, right): number => left - right,
     );
-  };
 
-  private multiply = (table: Table): Result<Value, Error> => {
-    return this.withCellAndRange(
+  private readonly multiply = (table: Table): Result<Value, Error> => this.withCellAndRange(
       table,
       'multiply',
       true,
       (left, right): number => left * right,
     );
-  };
 
-  private divide = (table: Table): Result<Value, Error> => {
-    return this.withCellAndRange(
+  private readonly divide = (table: Table): Result<Value, Error> => this.withCellAndRange(
       table,
       'divide',
       false,
       (left, right): number => left / right,
     );
-  };
 }

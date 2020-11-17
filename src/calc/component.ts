@@ -1,8 +1,8 @@
+import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
+import { checkChildLength, checkType } from './calc';
 import { Range } from './range';
 import { IToken } from 'ebnf';
-import { err, ok, Result } from '../neverthrow/neverthrow';
-import { checkChildLength, checkType } from './calc';
 
 export const newComponent = (
   ast: IToken,
@@ -96,12 +96,12 @@ export const newColumn = (
   ast: IToken,
   table: Table,
 ): Result<AbsoluteColumn, Error> => {
-  let typeError = checkType(ast, 'column');
+  const typeError = checkType(ast, 'column');
   if (typeError) {
     return err(typeError);
   }
 
-  let lengthError = checkChildLength(ast, 1);
+  const lengthError = checkChildLength(ast, 1);
   if (lengthError) {
     return err(lengthError);
   }
@@ -125,7 +125,7 @@ const relativeColumnAsAbsoluteColumn = (
   ast: IToken,
   table: Table,
 ): Result<AbsoluteColumn, Error> => {
-  let typeError = checkType(ast, 'relative_column');
+  const typeError = checkType(ast, 'relative_column');
   if (typeError) {
     return err(typeError);
   }
@@ -142,9 +142,9 @@ const relativeColumnAsAbsoluteColumn = (
   let offset = 0;
   if (ast.children.length === 1) {
     const child = ast.children[0];
-    let typeError = checkType(child, 'offset');
-    if (typeError) {
-      return err(typeError);
+    const childTypeError = checkType(child, 'offset');
+    if (childTypeError) {
+      return err(childTypeError);
     }
     offset = parseInt(child.text);
   }
@@ -159,7 +159,7 @@ const relativeColumnAsAbsoluteColumn = (
         return ok(new AbsoluteColumn(table.getWidth() - 1 + offset));
       default:
         return err(
-          Error('Symbol ${ast.text[0] is not valid for a relative column}'),
+          Error(`Symbol ${ast.text[0]} is not valid for a relative column`),
         );
     }
   } catch (error) {
@@ -180,18 +180,18 @@ class AbsoluteColumn {
 
     const ast = value;
 
-    let typeError = checkType(ast, 'real');
+    const typeError = checkType(ast, 'real');
     if (typeError) {
       throw typeError;
     }
 
-    let lengthError = checkChildLength(ast, 1);
+    const lengthError = checkChildLength(ast, 1);
     if (lengthError) {
       throw lengthError;
     }
 
     const child = ast.children[0];
-    let childTypeError = checkType(child, 'int');
+    const childTypeError = checkType(child, 'int');
     if (childTypeError) {
       throw childTypeError;
     }
@@ -211,12 +211,12 @@ export const newRow = (
   ast: IToken,
   table: Table,
 ): Result<AbsoluteRow, Error> => {
-  let typeError = checkType(ast, 'row');
+  const typeError = checkType(ast, 'row');
   if (typeError) {
     return err(typeError);
   }
 
-  let lengthError = checkChildLength(ast, 1);
+  const lengthError = checkChildLength(ast, 1);
   if (lengthError) {
     return err(lengthError);
   }
@@ -240,7 +240,7 @@ const relativeRowAsAbsoluteRow = (
   ast: IToken,
   table: Table,
 ): Result<AbsoluteRow, Error> => {
-  let typeError = checkType(ast, 'relative_row');
+  const typeError = checkType(ast, 'relative_row');
   if (typeError) {
     return err(typeError);
   }
@@ -257,9 +257,9 @@ const relativeRowAsAbsoluteRow = (
   let offset = 0;
   if (ast.children.length === 1) {
     const child = ast.children[0];
-    let typeError = checkType(child, 'offset');
-    if (typeError) {
-      return err(typeError);
+    const childTypeError = checkType(child, 'offset');
+    if (childTypeError) {
+      return err(childTypeError);
     }
     offset = parseInt(child.text);
   }
@@ -279,7 +279,7 @@ const relativeRowAsAbsoluteRow = (
         return err(Error('Table does not have a heading delimiter line'));
       default:
         return err(
-          Error('Symbol ${ast.text[0] is not valid for a relative row}'),
+          Error(`Symbol ${ast.text[0]} is not valid for a relative row`),
         );
     }
   } catch (error) {
@@ -300,18 +300,18 @@ class AbsoluteRow {
 
     const ast = value;
 
-    let typeError = checkType(ast, 'real');
+    const typeError = checkType(ast, 'real');
     if (typeError) {
       throw typeError;
     }
 
-    let lengthError = checkChildLength(ast, 1);
+    const lengthError = checkChildLength(ast, 1);
     if (lengthError) {
       throw lengthError;
     }
 
     const child = ast.children[0];
-    let childTypeError = checkType(child, 'int');
+    const childTypeError = checkType(child, 'int');
     if (childTypeError) {
       throw childTypeError;
     }

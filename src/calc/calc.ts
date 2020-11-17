@@ -1,12 +1,12 @@
+import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
+import { AlgebraicOperation } from './algebraic_operation';
 import { newComponent } from './component';
+import { ConditionalFunctionCall } from './conditional_function';
 import { newRange, Range } from './range';
+import { SingleParamFunctionCall } from './single_param_function';
 import { Grammars, IToken } from 'ebnf';
 import { concat } from 'lodash';
-import { SingleParamFunctionCall } from './single_param_function';
-import { ConditionalFunctionCall } from './conditional_function';
-import { AlgebraicOperation } from './algebraic_operation';
-import { err, ok, Result } from '../neverthrow/neverthrow';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
@@ -66,17 +66,11 @@ export class Arity {
     this.cols = columns;
   }
 
-  public isRow = (): boolean => {
-    return this.rows > 1 && this.cols === 1;
-  };
+  public isRow = (): boolean => this.rows > 1 && this.cols === 1;
 
-  public isColumn = (): boolean => {
-    return this.rows === 1 && this.cols > 1;
-  };
+  public isColumn = (): boolean => this.rows === 1 && this.cols > 1;
 
-  public isCell = (): boolean => {
-    return this.rows === 1 && this.cols === 1;
-  };
+  public isCell = (): boolean => this.rows === 1 && this.cols === 1;
 }
 
 export class Value {
@@ -243,8 +237,8 @@ export const parseAndApply = (
     (
       prev: Result<Formula[], Error>,
       formulaLine: string,
-    ): Result<Formula[], Error> => {
-      return prev.andThen(
+    ): Result<Formula[], Error> =>
+      prev.andThen(
         (currentFormulas: Formula[]): Result<Formula[], Error> => {
           const newFormulas = parseFormula(formulaLine, table);
           if (newFormulas.isErr()) {
@@ -253,22 +247,20 @@ export const parseAndApply = (
 
           return ok(concat(newFormulas.value, currentFormulas));
         },
-      );
-    },
+      ),
     ok([]),
   );
 
   // If there is no error,
-  return formulas.andThen((formulas: Formula[]) =>
+  return formulas.andThen((innerFormulas: Formula[]) =>
     // for each formula
-    formulas.reduce<Result<Table, Error>>(
+    innerFormulas.reduce<Result<Table, Error>>(
       (prevValue, formula) =>
         // If the previous formula didn't give an error
         prevValue.andThen(
-          (prevTable): Result<Table, Error> => {
+          (prevTable): Result<Table, Error> =>
             // attempt to apply this formula to the table and return the result
-            return formula.merge(prevTable);
-          },
+            formula.merge(prevTable),
         ),
       // Start with the current table state
       ok(table),
@@ -296,12 +288,12 @@ export const parseFormula = (
     return err(new Error(`Formula '${line}' could not be parsed`));
   }
 
-  let typeError = checkType(ast, 'tblfm_line');
+  const typeError = checkType(ast, 'tblfm_line');
   if (typeError) {
     return err(typeError);
   }
 
-  let lengthError = checkChildLength(ast, 1);
+  const lengthError = checkChildLength(ast, 1);
   if (lengthError) {
     return err(lengthError);
   }

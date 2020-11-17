@@ -1,20 +1,20 @@
-import { IToken } from 'ebnf';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { checkChildLength, checkType, Source, Value } from './calc';
+import { IToken } from 'ebnf';
 
 export class ConditionalFunctionCall {
-  private predicate: Predicate;
-  private leftSource: Source;
-  private rightSource: Source;
+  private readonly predicate: Predicate;
+  private readonly leftSource: Source;
+  private readonly rightSource: Source;
 
   constructor(ast: IToken, table: Table) {
-    let typeError = checkType(ast, 'conditional_function_call');
+    const typeError = checkType(ast, 'conditional_function_call');
     if (typeError) {
       throw typeError;
     }
 
-    let lengthError = checkChildLength(ast, 3);
+    const lengthError = checkChildLength(ast, 3);
     if (lengthError) {
       throw lengthError;
     }
@@ -29,34 +29,33 @@ export class ConditionalFunctionCall {
     }
   }
 
-  public getValue = (table: Table): Result<Value, Error> => {
-    return this.predicate
+  public getValue = (table: Table): Result<Value, Error> =>
+    this.predicate
       .eval(table)
       .andThen((predicateResult) =>
         predicateResult
           ? this.leftSource.getValue(table)
           : this.rightSource.getValue(table),
       );
-  };
 }
 
 class Predicate {
-  private leftSource: Source;
-  private rightSource: Source;
-  private operator: string;
+  private readonly leftSource: Source;
+  private readonly rightSource: Source;
+  private readonly operator: string;
 
   constructor(ast: IToken, table: Table) {
-    let typeError = checkType(ast, 'predicate');
+    const typeError = checkType(ast, 'predicate');
     if (typeError) {
       throw typeError;
     }
 
-    let lengthError = checkChildLength(ast, 3);
+    const lengthError = checkChildLength(ast, 3);
     if (lengthError) {
       throw lengthError;
     }
 
-    let childTypeError = checkType(ast.children[1], 'conditional_operator');
+    const childTypeError = checkType(ast.children[1], 'conditional_operator');
     if (childTypeError) {
       throw childTypeError;
     }
@@ -84,14 +83,14 @@ class Predicate {
     const leftArity = leftData.value.getArity();
     const rightArity = rightData.value.getArity();
 
-    if (leftArity.cols != 1 || leftArity.rows != 1) {
+    if (leftArity.cols !== 1 || leftArity.rows !== 1) {
       return err(
         Error(
           'Can only use comparison operator on a single cell. Left side is not a cell.',
         ),
       );
     }
-    if (rightArity.cols != 1 || rightArity.rows != 1) {
+    if (rightArity.cols !== 1 || rightArity.rows !== 1) {
       return err(
         Error(
           'Can only use comparison operator on a single cell. Right side is not a cell.',

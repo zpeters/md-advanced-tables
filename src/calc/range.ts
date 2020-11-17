@@ -1,9 +1,9 @@
-import { IToken } from 'ebnf';
-import { map, range } from 'lodash';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { Value, Arity, checkType, checkChildLength } from './calc';
+import { Arity, checkChildLength,checkType, Value } from './calc';
 import { newComponent } from './component';
+import { IToken } from 'ebnf';
+import { map, range } from 'lodash';
 
 export interface Cell {
   row: number;
@@ -15,17 +15,16 @@ export class Range {
   public readonly cellBR: Cell; // bottom right
 
   constructor(cell1: Cell, cell2: Cell) {
-    let minRow = Math.min(cell1.row, cell2.row);
-    let minColumn = Math.min(cell1.column, cell2.column);
-    let maxRow = Math.max(cell1.row, cell2.row);
-    let maxColumn = Math.max(cell1.column, cell2.column);
+    const minRow = Math.min(cell1.row, cell2.row);
+    const minColumn = Math.min(cell1.column, cell2.column);
+    const maxRow = Math.max(cell1.row, cell2.row);
+    const maxColumn = Math.max(cell1.column, cell2.column);
 
     this.cellTL = { row: minRow, column: minColumn };
     this.cellBR = { row: maxRow, column: maxColumn };
   }
 
-  public readonly getValue = (table: Table): Result<Value, Error> => {
-    return ok(
+  public readonly getValue = (table: Table): Result<Value, Error> => ok(
       new Value(
         map(range(this.cellTL.row, this.cellBR.row + 1), (row): string[] =>
           map(
@@ -35,18 +34,17 @@ export class Range {
         ),
       ),
     );
-  };
 
   /**
    * getArity returns the dimensions described by the Range, in rows/columns.
    */
-  public readonly getArity = (): Arity => {
+  public readonly getArity = (): Arity => 
     // cellBR is inclusive, so add 1 to each dimension
-    return new Arity(
+     new Arity(
       this.cellBR.row - this.cellTL.row + 1,
       this.cellBR.column - this.cellTL.column + 1,
-    );
-  };
+    )
+  ;
 
   /**
    * merge takes the provided values, and attempts to place them in the
@@ -78,7 +76,7 @@ export const newRange = (ast: IToken, table: Table): Result<Range, Error> => {
   if (typeErr) {
     return err(typeErr);
   }
-  let lengthError = checkChildLength(ast, 2);
+  const lengthError = checkChildLength(ast, 2);
   if (lengthError) {
     return err(lengthError);
   }

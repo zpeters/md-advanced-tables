@@ -42,9 +42,7 @@ export class Ok<T, E> {
     return this.value;
   }
 
-  match = <A>(ok: (t: T) => A, _err: (e: E) => A): A => {
-    return ok(this.value);
-  };
+  match = <A>(ok: (t: T) => A, _err: (e: E) => A): A => ok(this.value);
 
   _unsafeUnwrap(): T {
     return this.value;
@@ -82,9 +80,7 @@ export class Err<T, E> {
     return v;
   }
 
-  match = <A>(_ok: (t: T) => A, err: (e: E) => A): A => {
-    return err(this.error);
-  };
+  match = <A>(_ok: (t: T) => A, err: (e: E) => A): A => err(this.error);
 
   _unsafeUnwrap(): T {
     throw new Error('Called `_unsafeUnwrap` on an Err');

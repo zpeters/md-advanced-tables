@@ -1,20 +1,20 @@
-import { IToken } from 'ebnf';
-import { fill, zipWith } from 'lodash';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { checkChildLength, checkType, Source, Value } from './calc';
+import { IToken } from 'ebnf';
+import { fill, zipWith } from 'lodash';
 
 export class SingleParamFunctionCall {
   private readonly param: Source;
   private readonly op;
 
   constructor(ast: IToken, table: Table) {
-    let typeError = checkType(ast, 'single_param_function_call');
+    const typeError = checkType(ast, 'single_param_function_call');
     if (typeError) {
       throw typeError;
     }
 
-    let lengthError = checkChildLength(ast, 2);
+    const lengthError = checkChildLength(ast, 2);
     if (lengthError) {
       throw lengthError;
     }
@@ -50,13 +50,12 @@ export class SingleParamFunctionCall {
     this.param = new Source(ast.children[1], table);
   }
 
-  public getValue = (table: Table): Result<Value, Error> => {
-    return this.param.getValue(table).andThen((sourceData) => {
+  public getValue = (table: Table): Result<Value, Error> =>
+    this.param.getValue(table).andThen((sourceData) =>
       // The operation functions do not throw errors because data arity has
       // already been validated.
-      return ok(this.op(sourceData));
-    });
-  };
+      ok(this.op(sourceData)),
+    );
 }
 
 /**
@@ -64,10 +63,11 @@ export class SingleParamFunctionCall {
  */
 const sum = (value: Value): Value => {
   const total = value.val.reduce<number>(
-    (total, currentRow): number =>
-      currentRow.reduce<number>((rowTotal, currentCell): number => {
-        return rowTotal + parseFloat(currentCell);
-      }, total),
+    (runningTotal, currentRow): number =>
+      currentRow.reduce<number>(
+        (rowTotal, currentCell): number => rowTotal + parseFloat(currentCell),
+        runningTotal,
+      ),
     0,
   );
 
@@ -96,7 +96,7 @@ const vsum = (value: Value): Value => {
   return new Value([totalRowAsStr]);
 };
 
-interface counter {
+interface Counter {
   total: number;
   count: number;
 }
@@ -106,12 +106,16 @@ interface counter {
  */
 const mean = (value: Value): Value => {
   const { total, count } = value.val.reduce(
-    ({ total, count }, currentRow): counter =>
+    ({ total: runningTotal1, count: currentCount1 }, currentRow): Counter =>
       currentRow.reduce(
-        ({ total, count }, currentCell): counter => {
-          return { total: total + +currentCell, count: count + 1 };
-        },
-        { total, count },
+        (
+          { total: runningTotal2, count: currentCount2 },
+          currentCell,
+        ): Counter => ({
+          total: runningTotal2 + +currentCell,
+          count: currentCount2 + 1,
+        }),
+        { total: runningTotal1, count: currentCount1 },
       ),
     { total: 0, count: 0 },
   );
@@ -129,15 +133,13 @@ const vmean = (value: Value): Value => {
   }
 
   const numCols = value.val[0].length;
-  const counterRow: counter[] = value.val.reduce<counter[]>(
-    (counters, currentRow): counter[] => {
+  const counterRow: Counter[] = value.val.reduce<Counter[]>(
+    (counters, currentRow): Counter[] => {
       const currentAsNum = currentRow.map((val) => +val);
-      return zipWith(counters, currentAsNum, (currentCounter, cell) => {
-        return {
-          total: currentCounter.total + cell,
-          count: currentCounter.count + 1,
-        };
-      });
+      return zipWith(counters, currentAsNum, (currentCounter, cell) => ({
+        total: currentCounter.total + cell,
+        count: currentCounter.count + 1,
+      }));
     },
     fill(Array(numCols), { total: 0, count: 0 }),
   );
