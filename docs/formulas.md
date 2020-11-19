@@ -181,18 +181,20 @@ Ranges can also be used to select more than a row or column.
 
 ### Algebraic Operations
 
-Formulas can be used to add, subtract, multiply, and divide values in a table.
+Formulas can be used to add, subtract, multiply, and divide values in a
+table. All algebraic operations must be contained in parenthesis.
 
 #### Add
 
 When adding, at least one of the specified values must be a single cell. A
 formula may not add one range to another range.
 
-- `@2$3+@3$4` - Valid, adding two cells. Arity `1x1`
-- `@2+@3$4` - Valid, add a single cell to each value in the row. Outputs a row.
-- `@2$3+$4` - Valid, add a single cell to each value in the column. Outputs a column.
-- `@2+@3` - Invalid, both operands are ranges.
-- `@2+$3` - Invalid, both operands are ranges.
+- `(@2$3+@3$4)` - Valid, adding two cells. Arity `1x1`
+- `(@2+@3$4)` - Valid, add a single cell to each value in the row. Outputs a row.
+- `(@2$3+$4)` - Valid, add a single cell to each value in the column. Outputs a column.
+- `(@2+@3)` - Invalid, both operands are ranges.
+- `(@2+$3)` - Invalid, both operands are ranges.
+- `@2$3+$4` - Invalid, missing parenthesis
 
 It does not matter which operand is a cell and which is a range.
 
@@ -201,29 +203,32 @@ It does not matter which operand is a cell and which is a range.
 Subtraction requires that the second operand be a single cell. The first
 operand may be a range or cell.
 
-- `@2$3-@3$4` - Valid, subtract two cells. Arity `1x1`
-- `@2-@3$4` - Valid, subtract a single cell from each value in the row. Outputs a row.
-- `@3$4-@2` - Invalid, may not subtract a range from a single cell.
+- `(@2$3-@3$4)` - Valid, subtract two cells. Arity `1x1`
+- `(@2-@3$4)` - Valid, subtract a single cell from each value in the row. Outputs a row.
+- `(@3$4-@2)` - Invalid, may not subtract a range from a single cell.
+- `@2-@3$4` - Invalid, missing parenthesis
 
 #### Multiply
 
 Multiplication requires at least one value be a single cell. A formula may
 not multiply one range with another range.
 
-- `@2$3*@3$4` - Valid, multiplying two cells. Arity `1x1`
-- `@2*@3$4` - Valid, multiply a single cell with each value in the row. Outputs a row.
-- `@2$3*$4` - Valid, multiply a single cell with each value in the column. Outputs a column.
-- `@2*@3` - Invalid, both operands are ranges.
-- `@2*$3` - Invalid, both operands are ranges.
+- `(@2$3*@3$4)` - Valid, multiplying two cells. Arity `1x1`
+- `(@2*@3$4)` - Valid, multiply a single cell with each value in the row. Outputs a row.
+- `(@2$3*$4)` - Valid, multiply a single cell with each value in the column. Outputs a column.
+- `(@2*@3)` - Invalid, both operands are ranges.
+- `(@2*$3)` - Invalid, both operands are ranges.
+- `@2$3*$4` - Invalid, missing parenthesis
 
 #### Divide
 
 Division requires that the second operand be a single cell. The first operand
 may be a range or a cell.
 
-- `@2$3/@3$4` - Valid, divide two cells. Arity `1x1`
-- `@2/@3$4` - Valid, divide each value in the row by s single cell. Outputs a row.
-- `@3$4/@2` - Invalid, may not divide a single cell by a range.
+- `(@2$3/@3$4)` - Valid, divide two cells. Arity `1x1`
+- `(@2/@3$4)` - Valid, divide each value in the row by s single cell. Outputs a row.
+- `(@3$4/@2)` - Invalid, may not divide a single cell by a range.
+- `@2/@3$4` - Invalid, missing parenthesis
 
 ### Conditional Operations
 
