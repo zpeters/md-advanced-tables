@@ -26,7 +26,7 @@ learning the details of any specific feature.
 | Salt              | 18    |
 | Starter           | 40    |
 | **Total Grams**   |       |
-<!-- TBLFM: @2$>=vsum(@I+1$>..@>-1$>) -->
+<!-- TBLFM: @>$2=vsum(@I+1$>..@>-1$>) -->
 ```
 
 Formulas are added to tables as an HTML comment directly following the table.
@@ -47,14 +47,14 @@ down into two halves: where to retrieve data, and where to store the result.
 ```
 
 So in this formula, we are retrieving data from `vsum(@I+1$>..@>-1$>)` and
-storing it in `@2$>`.
+storing it in `@>$2`.
 
 ### Rows and Columns
 
 Just like in org-mode, formulas use symbols to denote rows and columns. In
-the above formula, the destination for our calculated value is `@2$>`. We can
-break this down into `@2` and `$>`, meaning "row 2" and "last column". We'll
-dive into what "last column" means in a minute.
+the above formula, the destination for our calculated value is `@>$2`. We can
+break this down into `@>` and `$2`, meaning "last row" and "column 2". We'll
+dive into what "last row" means in a minute.
 
 Let's look at the source: `vsum(@I+1$>..@>-1$>)`. Again, if we ignore some of
 the concepts we haven't learned yet, we can identify a few rows and columns
@@ -98,7 +98,7 @@ column, to the second to last row in the last column."
 The last piece to our example is the function call.
 
 ```md
-<!-- TBLFM: @2$>=vsum(@I+1$>..@>-1$>) -->
+<!-- TBLFM: @>$2=vsum(@I+1$>..@>-1$>) -->
 ```
 
 In this example we are using the `vsum` function, and passing it the range
