@@ -1,9 +1,11 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { AlgebraicOperation } from './algebraic_operation';
+import { checkChildLength, checkType } from './ast_utils';
 import { newComponent } from './component';
 import { ConditionalFunctionCall } from './conditional_function';
 import { newRange, Range } from './range';
+import { Arity, Value } from './results';
 import { SingleParamFunctionCall } from './single_param_function';
 import { Grammars, IToken } from 'ebnf';
 import { concat } from 'lodash';
@@ -56,46 +58,6 @@ formatting_directive ::= "%." int "f"
 real ::= '-'? int
 int ::= [0-9]+
 `;
-
-export class Arity {
-  public rows: number;
-  public cols: number;
-
-  constructor(rows: number, columns: number) {
-    this.rows = rows;
-    this.cols = columns;
-  }
-
-  public isRow = (): boolean => this.rows > 1 && this.cols === 1;
-
-  public isColumn = (): boolean => this.rows === 1 && this.cols > 1;
-
-  public isCell = (): boolean => this.rows === 1 && this.cols === 1;
-}
-
-export class Value {
-  public readonly val: string[][];
-
-  constructor(val: string[][]) {
-    this.val = val;
-  }
-
-  public get(row: number, column: number): string {
-    return this.val[row][column];
-  }
-
-  /**
-   * getArity returns the dimensions of the contained value, in rows and columns
-   */
-  public getArity = (): Arity => {
-    const maxCols = this.val.reduce<number>(
-      (max: number, currentRow: string[]): number =>
-        Math.max(max, currentRow.length),
-      0,
-    );
-    return new Arity(this.val.length, maxCols);
-  };
-}
 
 export interface ValueProvider {
   getValue(table: Table): Result<Value, Error>;
@@ -300,44 +262,4 @@ export const parseFormula = (
 
   const formulas = ast.children[0].children;
   return ok(formulas.map((formula) => new Formula(formula, table)));
-};
-
-export const checkType = (
-  ast: IToken,
-  expectedType: string,
-): Error | undefined => {
-  if (ast.type === expectedType) {
-    return;
-  }
-
-  return new Error(
-    `Formula element '${ast.text}' is a ${ast.type} but expected ` +
-      `a ${expectedType} in this position.`,
-  );
-};
-
-export const checkChildLength = (
-  ast: IToken,
-  len: number,
-): Error | undefined => {
-  if (ast.children.length === len) {
-    return;
-  }
-
-  return new Error(
-    `Formula element '${ast.text}' was expected to have ${len} ` +
-      `elements, but had ${ast.children.length}`,
-  );
-};
-
-const prettyPrintAST = (token: IToken, level = 0): void => {
-  console.log(
-    '  '.repeat(level) +
-      `|-${token.type}${token.children.length === 0 ? '=' + token.text : ''}`,
-  );
-  if (token.children) {
-    token.children.forEach((c) => {
-      prettyPrintAST(c, level + 1);
-    });
-  }
 };

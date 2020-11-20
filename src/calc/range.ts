@@ -1,7 +1,8 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { Arity, checkChildLength,checkType, Value } from './calc';
+import { checkChildLength, checkType } from './ast_utils';
 import { newComponent } from './component';
+import { Arity, Value } from './results';
 import { IToken } from 'ebnf';
 import { map, range } from 'lodash';
 
@@ -24,7 +25,8 @@ export class Range {
     this.cellBR = { row: maxRow, column: maxColumn };
   }
 
-  public readonly getValue = (table: Table): Result<Value, Error> => ok(
+  public readonly getValue = (table: Table): Result<Value, Error> =>
+    ok(
       new Value(
         map(range(this.cellTL.row, this.cellBR.row + 1), (row): string[] =>
           map(
@@ -38,13 +40,12 @@ export class Range {
   /**
    * getArity returns the dimensions described by the Range, in rows/columns.
    */
-  public readonly getArity = (): Arity => 
+  public readonly getArity = (): Arity =>
     // cellBR is inclusive, so add 1 to each dimension
-     new Arity(
+    new Arity(
       this.cellBR.row - this.cellTL.row + 1,
       this.cellBR.column - this.cellTL.column + 1,
-    )
-  ;
+    );
 
   /**
    * merge takes the provided values, and attempts to place them in the

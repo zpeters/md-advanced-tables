@@ -1,6 +1,8 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { checkChildLength, checkType, Source, Value } from './calc';
+import { checkChildLength, checkType } from './ast_utils';
+import { Source } from './calc';
+import { Value } from './results';
 import { IToken } from 'ebnf';
 
 export class ConditionalFunctionCall {

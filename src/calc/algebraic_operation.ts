@@ -1,6 +1,7 @@
 import { Table } from '..';
 import { err, ok, Result } from '../neverthrow/neverthrow';
-import { Source, Value } from './calc';
+import { Source } from './calc';
+import { Value } from './results';
 import { IToken } from 'ebnf';
 import { map } from 'lodash';
 
@@ -93,7 +94,8 @@ export class AlgebraicOperation {
 
     const result: string[][] = map(
       leftValue.value.val,
-      (currentRow: string[]): string[] => map(currentRow, (currentCell: string): string => {
+      (currentRow: string[]): string[] =>
+        map(currentRow, (currentCell: string): string => {
           const leftCellValue = parseFloat(currentCell);
           return fn(leftCellValue, rightCellValue).toString();
         }),
@@ -101,28 +103,32 @@ export class AlgebraicOperation {
     return ok(new Value(result));
   };
 
-  private readonly add = (table: Table): Result<Value, Error> => this.withCellAndRange(
+  private readonly add = (table: Table): Result<Value, Error> =>
+    this.withCellAndRange(
       table,
       'add',
       true,
       (left, right): number => left + right,
     );
 
-  private readonly subtract = (table: Table): Result<Value, Error> => this.withCellAndRange(
+  private readonly subtract = (table: Table): Result<Value, Error> =>
+    this.withCellAndRange(
       table,
       'subtract',
       false,
       (left, right): number => left - right,
     );
 
-  private readonly multiply = (table: Table): Result<Value, Error> => this.withCellAndRange(
+  private readonly multiply = (table: Table): Result<Value, Error> =>
+    this.withCellAndRange(
       table,
       'multiply',
       true,
       (left, right): number => left * right,
     );
 
-  private readonly divide = (table: Table): Result<Value, Error> => this.withCellAndRange(
+  private readonly divide = (table: Table): Result<Value, Error> =>
+    this.withCellAndRange(
       table,
       'divide',
       false,

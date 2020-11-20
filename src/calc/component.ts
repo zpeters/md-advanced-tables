@@ -1,6 +1,6 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { checkChildLength, checkType } from './calc';
+import { checkChildLength, checkType } from './ast_utils';
 import { Range } from './range';
 import { IToken } from 'ebnf';
 
