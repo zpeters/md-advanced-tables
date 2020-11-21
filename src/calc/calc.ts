@@ -15,12 +15,6 @@ import {
   Formatter,
 } from './display_directive';
 
-// TODO: Add unit test for table.setCellAt
-// TODO: Add unit test for tablerow.setCellAt
-// TODO: Add support for @-n as a shorthand for @>-(n-1)
-// TODO: Add a test to check that arity of source and destination matches when calling aggregating functions
-// TODO: Add tests with multiple functions. Ensure applied sequentially.
-
 /**
  * W3C grammar describing a valid formula at the bottom of a table.
  *
