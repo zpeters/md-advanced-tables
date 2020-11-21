@@ -354,8 +354,26 @@ These methods can be mixed.
 <!-- TBLFM: @5$3=sum(@2) -->
 ```
 
+## Formatting Options
+
+You can optionally request the result be output with a certain number of
+decimal points by using a formatting directive. For example:
+
+```md
+| A   | B   | C   | D   |
+| --- | --- | --- | --- |
+| 1   | 2   | 5   | 6   |
+| 3   | 4   | 7   | 8   |
+|     |     |     |     |
+<!-- TBLFM: @>=(@I+1 / @4$3);%.2f -->
+```
+
+In this example, the formatting directive is the `;%.2f` at the end. Without
+that, the results would be values such as `0.14285714285714285`, but because
+we have requested `2` decimal points, the results will instead be `0.14`.
+
 ## Conclusion
 
 This documentation is a work in progress, and I am not a technical writer.
 Please help improve this documentation by sending your questions or
-suggestions to https://github.com/tgrosinger/md-advanced-tables/issues.
+suggestions to <https://github.com/tgrosinger/md-advanced-tables/issues>.

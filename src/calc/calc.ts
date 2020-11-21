@@ -9,6 +9,11 @@ import { Arity, Value } from './results';
 import { SingleParamFunctionCall } from './single_param_function';
 import { Grammars, IToken } from 'ebnf';
 import { concat } from 'lodash';
+import {
+  DefaultFormatter,
+  DisplayDirective,
+  Formatter,
+} from './display_directive';
 
 // TODO: Add unit test for table.setCellAt
 // TODO: Add unit test for tablerow.setCellAt
@@ -68,7 +73,12 @@ export class Formula {
   private readonly destination: Destination;
 
   constructor(ast: IToken, table: Table) {
-    this.destination = new Destination(ast.children[0], table);
+    let formatter: Formatter = new DefaultFormatter();
+    if (ast.children.length === 3) {
+      formatter = new DisplayDirective(ast.children[2]);
+    }
+
+    this.destination = new Destination(ast.children[0], table, formatter);
     this.source = new Source(ast.children[1], table);
   }
 
@@ -118,8 +128,11 @@ export class Source {
 
 export class Destination {
   private readonly locationDescriptor: Range;
+  private readonly formatter: Formatter;
 
-  constructor(ast: IToken, table: Table) {
+  constructor(ast: IToken, table: Table, displayDirective: Formatter) {
+    this.formatter = displayDirective;
+
     if (ast.type !== 'destination') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
@@ -160,7 +173,7 @@ export class Destination {
    * location described by this Range in the provided table.
    */
   public readonly merge = (table: Table, value: Value): Result<Table, Error> =>
-    this.locationDescriptor.merge(table, value);
+    this.locationDescriptor.merge(table, value, this.formatter);
 }
 
 const newValueProvider = (

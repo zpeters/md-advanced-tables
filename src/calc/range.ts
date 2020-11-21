@@ -5,6 +5,7 @@ import { newComponent } from './component';
 import { Arity, Value } from './results';
 import { IToken } from 'ebnf';
 import { map, range } from 'lodash';
+import { Formatter } from './display_directive';
 
 export interface Cell {
   row: number;
@@ -54,6 +55,7 @@ export class Range {
   public readonly merge = (
     table: Table,
     value: Value,
+    formatter: Formatter,
   ): Result<Table, Error> => {
     let newTable = table;
     let valueRow = 0;
@@ -62,7 +64,7 @@ export class Range {
       valueColumn = 0;
       for (let c = this.cellTL.column; c <= this.cellBR.column; c++) {
         const val = value.get(valueRow, valueColumn);
-        newTable = newTable.setCellAt(r, c, val.toString());
+        newTable = newTable.setCellAt(r, c, formatter.format(val));
         valueColumn++;
       }
       valueRow++;
