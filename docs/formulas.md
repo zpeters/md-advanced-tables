@@ -108,16 +108,36 @@ input data, providing a single cell as the output.
 
 ### The result
 
-Since our sum function provided a single cell as its output, and the
-destination is also a single cell, we will say that the arity matches. If we
-used a function that outputs a row of data, but attempted to put the result in
-a single cell, there would be an arity mismatch, and evaluating the formula
-would fail. Similarly, if the function provided a single cell of output and
-we attempted to put it in a range, the evaluation would fail.
-
 With that we understand all the components of the example formula. It adds
 the numbers from the second column, excluding the header and the final row,
 and places the result in the final row.
+
+## Arity
+
+In formulas, many operations require that there be a matching arity between
+the source and the destination. Arity is a description of how many rows and
+columns are in particular value. Take for example the following table:
+
+```md
+| Item      | Count |
+| --------- | ----- |
+| Apples    | 1     |
+| Oranges   | 3     |
+| Bananas   | 5     |
+| **Total** | 9     |
+```
+
+In this table, if I wrote a selector for the first two rows (`@3..@4` or
+`@3$1..@4$2`), then I am selecting two rows and two columns. This could be
+described as having an arity of `2x2`. If I instead selected a single cell
+(`@3$1`), then the arity would be `1x1`.
+
+In the formula components described below, they will often state what arity
+their result, or output is. When using the output as the input to another
+formula component, or when putting into a formula destination, it is
+necessary that the arity matches. For example, a formula such as `@2$3=@4` is
+invalid, because a full row (`@4`) can not be put in a single column
+(`@2$3`).
 
 ## Formula Components
 
