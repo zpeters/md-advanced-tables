@@ -1,11 +1,11 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { AlgebraicOperation } from './algebraic_operation';
-import { checkChildLength, checkType } from './ast_utils';
-import { newComponent } from './component';
+import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
+import { Reference } from './reference';
 import { ConditionalFunctionCall } from './conditional_function';
-import { newRange, Range } from './range';
-import { Arity, Value } from './results';
+import { Range } from './range';
+import { Value } from './results';
 import { SingleParamFunctionCall } from './single_param_function';
 import { Grammars, IToken } from 'ebnf';
 import { concat } from 'lodash';
@@ -14,6 +14,8 @@ import {
   DisplayDirective,
   Formatter,
 } from './display_directive';
+import { Destination, newDestination } from './destination';
+import { Constant } from './constant';
 
 /**
  * W3C grammar describing a valid formula at the bottom of a table.
@@ -26,41 +28,41 @@ import {
  * See https://github.com/lys-lang/node-ebnf/issues/34
  */
 const parserGrammar = `
-tblfm_line ::= "<!-- TBLFM: " formula_list " -->"
+tblfm_line   ::= "<!-- TBLFM: " formula_list " -->"
 formula_list ::= formula ( "::" formula_list )?
-formula ::= destination "=" source display_directive?
-destination ::=  range | component
-source ::= range | component | single_param_function_call | conditional_function_call | algebraic_operation
+formula      ::= destination "=" source display_directive?
 
-range ::= component ".." component
-component ::= row column | row | column
-row ::= "@" ( real | relative_row )
-column ::= "$" ( real | relative_column )
-relative_row ::= ( "<" | ">" | "I" ) offset?
-relative_column ::= ( "<" | ">" ) offset?
-offset ::= ( "-" | "+" ) int
+source           ::= range | source_reference | single_param_function_call | conditional_function_call | algebraic_operation | real
+range            ::= source_reference ".." source_reference
+source_reference ::= absolute_reference | relative_reference
+destination      ::= range | absolute_reference
 
-single_param_function_call ::= single_param_function "(" source ")"
-single_param_function ::= "mean" | "vmean" | "sum" | "vsum"
+relative_reference ::= (relative_row | absolute_row) (relative_column | absolute_column) | relative_row | relative_column
+relative_row ::= "@" ( "-" | "+" ) int
+relative_column ::= "$" ( "-" | "+" ) int
 
-conditional_function_call ::= "if(" predicate ", " source ", " source ")"
-predicate ::= source conditional_operator source
-conditional_operator ::= ">" | "<" | ">=" | "<=" | "==" | "!="
+absolute_reference ::= absolute_row absolute_column | absolute_row | absolute_column
+absolute_row ::= "@" ( "I" | "<" | ">" | int )
+absolute_column ::= "$" ( "<" | ">" | int )
+
+single_param_function_call ::= single_param_function "(" source ")" 
+single_param_function      ::= "mean" | "sum"
+
+conditional_function_call ::= "if(" predicate "," " "? source "," " "? source ")"
+predicate                 ::= source_without_range conditional_operator source_without_range
+source_without_range      ::= source_reference | single_param_function_call | conditional_function_call | algebraic_operation | real
+conditional_operator      ::= ">" | "<" | ">=" | "<=" | "==" | "!="
 
 algebraic_operation ::= "(" source " "? algebraic_operator " "? source ")"
-algebraic_operator ::= "+" | "-" | "*" | "/"
+algebraic_operator  ::= "+" | "-" | "*" | "/"
 
-display_directive ::= ";" display_directive_option
+display_directive        ::= ";" display_directive_option
 display_directive_option ::= formatting_directive
-formatting_directive ::= "%." int "f"
+formatting_directive     ::= "%." int "f"
 
-real ::= '-'? int
-int ::= [0-9]+
+real ::= "-"? int
+int  ::= [0-9]+
 `;
-
-export interface ValueProvider {
-  getValue(table: Table): Result<Value, Error>;
-}
 
 export class Formula {
   private readonly source: Source;
@@ -72,28 +74,16 @@ export class Formula {
       formatter = new DisplayDirective(ast.children[2]);
     }
 
-    this.destination = new Destination(ast.children[0], table, formatter);
+    const destination = newDestination(ast.children[0], table, formatter);
+    if (destination.isErr()) {
+      throw destination.error;
+    }
+    this.destination = destination.value;
     this.source = new Source(ast.children[1], table);
   }
 
   public merge = (table: Table): Result<Table, Error> => {
-    const value = this.source.getValue(table);
-    if (value.isErr()) {
-      return err(value.error);
-    }
-
-    const valueArity = value.value.getArity();
-    const destArity = this.destination.getArity(table);
-    if (
-      valueArity.rows !== destArity.rows ||
-      valueArity.cols !== destArity.cols
-    ) {
-      console.log(`Destination arity: ${destArity.rows}, ${destArity.cols}`);
-      console.log(`Value arity: ${valueArity.rows}, ${valueArity.cols}`);
-      return err(new Error('Source and destination arity mismatch'));
-    }
-
-    return this.destination.merge(table, value.value);
+    return this.destination.merge(this.source, table);
   };
 }
 
@@ -101,7 +91,7 @@ export class Source {
   private readonly locationDescriptor: ValueProvider;
 
   constructor(ast: IToken, table: Table) {
-    if (ast.type !== 'source') {
+    if (ast.type !== 'source' && ast.type !== 'source_without_range') {
       throw Error('Invalid AST token type of ' + ast.type);
     }
     if (ast.children.length !== 1) {
@@ -116,78 +106,36 @@ export class Source {
     this.locationDescriptor = vp.value;
   }
 
-  public getValue = (table: Table): Result<Value, Error> =>
-    this.locationDescriptor.getValue(table);
-}
-
-export class Destination {
-  private readonly locationDescriptor: Range;
-  private readonly formatter: Formatter;
-
-  constructor(ast: IToken, table: Table, displayDirective: Formatter) {
-    this.formatter = displayDirective;
-
-    if (ast.type !== 'destination') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-    if (ast.children.length !== 1) {
-      throw Error('Unexpected children length in Destination');
-    }
-
-    const child = ast.children[0];
-    switch (ast.children[0].type) {
-      case 'range':
-        const r1 = newRange(child, table);
-        if (r1.isErr()) {
-          throw r1.error;
-        }
-        this.locationDescriptor = r1.value;
-        break;
-      case 'component':
-        const r2 = newComponent(child, table);
-        if (r2.isErr()) {
-          throw r2.error;
-        }
-        this.locationDescriptor = r2.value;
-        break;
-      default:
-        throw Error('Unrecognized destination type ' + child.type);
-    }
-  }
-
   /**
-   * getArity returns the dimensions described by the destination, in rows and
-   * columns. Unlike in a Value, a table object is required to resolve the
-   * relative references and dimensions of rows/columns.
+   * getValue returns the evaluated value for this source recursively.
    */
-  public getArity = (table: Table): Arity => this.locationDescriptor.getArity();
-
-  /**
-   * merge takes the provided values, and attempts to place them in the
-   * location described by this Range in the provided table.
-   */
-  public readonly merge = (table: Table, value: Value): Result<Table, Error> =>
-    this.locationDescriptor.merge(table, value, this.formatter);
+  public getValue = (table: Table, currentCell: Cell): Result<Value, Error> => {
+    return this.locationDescriptor.getValue(table, currentCell);
+  };
 }
 
 const newValueProvider = (
   ast: IToken,
   table: Table,
 ): Result<ValueProvider, Error> => {
-  // TODO: ValueProviders should make use of destination to handle implied arity
-
   try {
     switch (ast.type) {
       case 'range':
-        return newRange(ast, table);
-      case 'component':
-        return newComponent(ast, table);
+        return ok(new Range(ast, table));
+      case 'source_reference':
+        const lengthError = checkChildLength(ast, 1);
+        if (lengthError) {
+          return err(lengthError);
+        }
+        return ok(new Reference(ast.children[0], table));
       case 'single_param_function_call':
         return ok(new SingleParamFunctionCall(ast, table));
       case 'conditional_function_call':
         return ok(new ConditionalFunctionCall(ast, table));
       case 'algebraic_operation':
         return ok(new AlgebraicOperation(ast, table));
+      case 'real':
+        return ok(new Constant(ast, table));
       default:
         throw Error('Unrecognized valueProvider type ' + ast.type);
     }
@@ -268,5 +216,9 @@ export const parseFormula = (
   }
 
   const formulas = ast.children[0].children;
-  return ok(formulas.map((formula) => new Formula(formula, table)));
+  try {
+    return ok(formulas.map((formula) => new Formula(formula, table)));
+  } catch (error) {
+    return err(error);
+  }
 };

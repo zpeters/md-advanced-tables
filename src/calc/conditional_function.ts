@@ -1,11 +1,11 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
-import { checkChildLength, checkType } from './ast_utils';
+import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
 import { Source } from './calc';
 import { Value } from './results';
 import { IToken } from 'ebnf';
 
-export class ConditionalFunctionCall {
+export class ConditionalFunctionCall implements ValueProvider {
   private readonly predicate: Predicate;
   private readonly leftSource: Source;
   private readonly rightSource: Source;
@@ -31,13 +31,13 @@ export class ConditionalFunctionCall {
     }
   }
 
-  public getValue = (table: Table): Result<Value, Error> =>
+  public getValue = (table: Table, cell: Cell): Result<Value, Error> =>
     this.predicate
-      .eval(table)
+      .eval(table, cell)
       .andThen((predicateResult) =>
         predicateResult
-          ? this.leftSource.getValue(table)
-          : this.rightSource.getValue(table),
+          ? this.leftSource.getValue(table, cell)
+          : this.rightSource.getValue(table, cell),
       );
 }
 
@@ -72,12 +72,12 @@ class Predicate {
     }
   }
 
-  public eval = (table: Table): Result<boolean, Error> => {
-    const leftData = this.leftSource.getValue(table);
+  public eval = (table: Table, cell: Cell): Result<boolean, Error> => {
+    const leftData = this.leftSource.getValue(table, cell);
     if (leftData.isErr()) {
       return err(leftData.error);
     }
-    const rightData = this.rightSource.getValue(table);
+    const rightData = this.rightSource.getValue(table, cell);
     if (rightData.isErr()) {
       return err(rightData.error);
     }
@@ -85,14 +85,14 @@ class Predicate {
     const leftArity = leftData.value.getArity();
     const rightArity = rightData.value.getArity();
 
-    if (leftArity.cols !== 1 || leftArity.rows !== 1) {
+    if (!leftArity.isCell()) {
       return err(
         Error(
           'Can only use comparison operator on a single cell. Left side is not a cell.',
         ),
       );
     }
-    if (rightArity.cols !== 1 || rightArity.rows !== 1) {
+    if (!rightArity.isCell()) {
       return err(
         Error(
           'Can only use comparison operator on a single cell. Right side is not a cell.',
@@ -100,8 +100,8 @@ class Predicate {
       );
     }
 
-    const leftVal = leftData.value.val[0][0];
-    const rightVal = rightData.value.val[0][0];
+    const leftVal = leftData.value.getAsFloat(0, 0);
+    const rightVal = rightData.value.getAsFloat(0, 0);
 
     switch (this.operator) {
       case '>':

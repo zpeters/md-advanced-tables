@@ -4,24 +4,28 @@ import { Source } from './calc';
 import { Value } from './results';
 import { IToken } from 'ebnf';
 import { map } from 'lodash';
+import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
+import { Constant } from './constant';
 
-export class AlgebraicOperation {
-  private readonly leftSource: Source;
-  private readonly rightSource: Source;
+export class AlgebraicOperation implements ValueProvider {
+  private readonly leftSource: ValueProvider;
+  private readonly rightSource: ValueProvider;
   private readonly operator: string;
 
   constructor(ast: IToken, table: Table) {
-    if (ast.type !== 'algebraic_operation') {
-      throw Error('Invalid AST token type of ' + ast.type);
-    }
-    if (ast.children.length !== 3) {
-      throw Error('Unexpected children length in AlgebraicOperation');
+    const typeErr = checkType(ast, 'algebraic_operation');
+    if (typeErr) {
+      throw typeErr;
     }
 
-    if (ast.children[1].type !== 'algebraic_operator') {
-      throw Error(
-        'Unexpected type for algebraic operator: ' + ast.children[1].type,
-      );
+    const lengthError = checkChildLength(ast, 3);
+    if (lengthError) {
+      throw lengthError;
+    }
+
+    const childTypeErr = checkType(ast.children[1], 'algebraic_operator');
+    if (childTypeErr) {
+      throw childTypeErr;
     }
     this.operator = ast.children[1].text;
 
@@ -34,16 +38,16 @@ export class AlgebraicOperation {
     }
   }
 
-  public getValue = (table: Table): Result<Value, Error> => {
+  public getValue = (table: Table, cell: Cell): Result<Value, Error> => {
     switch (this.operator) {
       case '+':
-        return this.add(table);
+        return this.add(table, cell);
       case '-':
-        return this.subtract(table);
+        return this.subtract(table, cell);
       case '*':
-        return this.multiply(table);
+        return this.multiply(table, cell);
       case '/':
-        return this.divide(table);
+        return this.divide(table, cell);
       default:
         return err(Error('Invalid algbraic operator: ' + this.operator));
     }
@@ -57,15 +61,16 @@ export class AlgebraicOperation {
    */
   private readonly withCellAndRange = (
     table: Table,
+    cell: Cell,
     name: string,
-    canFlip: boolean,
+    canHaveRightRange: boolean,
     fn: (left: number, right: number) => number,
   ): Result<Value, Error> => {
-    let leftValue = this.leftSource.getValue(table);
+    let leftValue = this.leftSource.getValue(table, cell);
     if (leftValue.isErr()) {
       return err(leftValue.error);
     }
-    let rightValue = this.rightSource.getValue(table);
+    let rightValue = this.rightSource.getValue(table, cell);
     if (rightValue.isErr()) {
       return err(rightValue.error);
     }
@@ -73,63 +78,90 @@ export class AlgebraicOperation {
     const leftArity = leftValue.value.getArity();
     const rightArity = rightValue.value.getArity();
 
-    if (!rightArity.isCell()) {
-      if (canFlip) {
-        if (leftArity.isCell()) {
-          [leftValue, rightValue] = [rightValue, leftValue];
-        } else {
-          return err(
-            Error(
-              `At least one operand in algebraic "${name}" must be a single cell.`,
-            ),
-          );
-        }
-      } else {
-        return err(
-          Error(`Right operand in algebraic "${name}" must be a single cell.`),
-        );
-      }
+    if (!rightArity.isCell() && !leftArity.isCell()) {
+      return err(
+        Error(
+          `At least one operand in algebraic "${name}" must be a single cell.`,
+        ),
+      );
     }
-    const rightCellValue = parseFloat(rightValue.value.get(0, 0));
 
-    const result: string[][] = map(
-      leftValue.value.val,
-      (currentRow: string[]): string[] =>
-        map(currentRow, (currentCell: string): string => {
-          const leftCellValue = parseFloat(currentCell);
-          return fn(leftCellValue, rightCellValue).toString();
-        }),
-    );
-    return ok(new Value(result));
+    if (!rightArity.isCell() && !canHaveRightRange) {
+      return err(
+        Error(`Right operand in algebraic "${name}" must be a single cell.`),
+      );
+    }
+
+    if (rightArity.isCell()) {
+      const rightCellValue = rightValue.value.getAsFloat(0, 0);
+
+      const result: string[][] = map(
+        leftValue.value.val,
+        (currentRow: string[]): string[] =>
+          map(currentRow, (currentCell: string): string => {
+            let leftCellValue = parseFloat(currentCell);
+            if (isNaN(leftCellValue)) {
+              leftCellValue = 0;
+            }
+            return fn(leftCellValue, rightCellValue).toString();
+          }),
+      );
+      return ok(new Value(result));
+    } else {
+      const leftCellValue = leftValue.value.getAsFloat(0, 0);
+
+      const result: string[][] = map(
+        rightValue.value.val,
+        (currentRow: string[]): string[] =>
+          map(currentRow, (currentCell: string): string => {
+            let rightCellValue = parseFloat(currentCell);
+            if (isNaN(leftCellValue)) {
+              rightCellValue = 0;
+            }
+            return fn(leftCellValue, rightCellValue).toString();
+          }),
+      );
+      return ok(new Value(result));
+    }
   };
 
-  private readonly add = (table: Table): Result<Value, Error> =>
+  private readonly add = (table: Table, cell: Cell): Result<Value, Error> =>
     this.withCellAndRange(
       table,
+      cell,
       'add',
       true,
       (left, right): number => left + right,
     );
 
-  private readonly subtract = (table: Table): Result<Value, Error> =>
+  private readonly subtract = (
+    table: Table,
+    cell: Cell,
+  ): Result<Value, Error> =>
     this.withCellAndRange(
       table,
+      cell,
       'subtract',
-      false,
+      true,
       (left, right): number => left - right,
     );
 
-  private readonly multiply = (table: Table): Result<Value, Error> =>
+  private readonly multiply = (
+    table: Table,
+    cell: Cell,
+  ): Result<Value, Error> =>
     this.withCellAndRange(
       table,
+      cell,
       'multiply',
       true,
       (left, right): number => left * right,
     );
 
-  private readonly divide = (table: Table): Result<Value, Error> =>
+  private readonly divide = (table: Table, cell: Cell): Result<Value, Error> =>
     this.withCellAndRange(
       table,
+      cell,
       'divide',
       false,
       (left, right): number => left / right,

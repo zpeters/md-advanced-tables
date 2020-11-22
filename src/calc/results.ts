@@ -1,3 +1,5 @@
+import { flatten } from 'lodash';
+
 export class Arity {
   public rows: number;
   public cols: number;
@@ -21,9 +23,17 @@ export class Value {
     this.val = val;
   }
 
-  public get(row: number, column: number): string {
-    return this.val[row][column];
-  }
+  public get = (row: number, column: number): string => this.val[row][column];
+
+  public getAsFloat = (row: number, column: number): number => {
+    const parsed = parseFloat(this.get(row, column));
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  public getAsInt = (row: number, column: number): number => {
+    const parsed = parseInt(this.get(row, column));
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
   /**
    * getArity returns the dimensions of the contained value, in rows and columns
@@ -35,5 +45,16 @@ export class Value {
       0,
     );
     return new Arity(this.val.length, maxCols);
+  };
+
+  public toString = (): string => {
+    if (this.getArity().isCell()) {
+      return this.get(0, 0);
+    }
+
+    return `[${flatten(this.val)
+      .map((val) => val.trim())
+      .filter((val) => val !== '')
+      .join(', ')}]`;
   };
 }
