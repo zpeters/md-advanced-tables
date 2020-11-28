@@ -26,7 +26,7 @@ learning the details of any specific feature.
 | Salt              | 18    |
 | Starter           | 40    |
 | **Total Grams**   |       |
-<!-- TBLFM: @>$2=vsum(@I+1$>..@>-1$>) -->
+<!-- TBLFM:  @>$2=sum(@I..@-1) -->
 ```
 
 Formulas are added to tables as an HTML comment directly following the table.
@@ -46,7 +46,7 @@ down into two halves: where to retrieve data, and where to store the result.
 <!-- TBLFM: DESTINATION=SOURCE -->
 ```
 
-So in this formula, we are retrieving data from `vsum(@I+1$>..@>-1$>)` and
+So in this formula, we are retrieving data from `sum(@I..@-1)` and
 storing it in `@>$2`.
 
 ### Rows and Columns
@@ -56,25 +56,23 @@ the above formula, the destination for our calculated value is `@>$2`. We can
 break this down into `@>` and `$2`, meaning "last row" and "column 2". We'll
 dive into what "last row" means in a minute.
 
-Let's look at the source: `vsum(@I+1$>..@>-1$>)`. Again, if we ignore some of
-the concepts we haven't learned yet, we can identify a few rows and columns
-here.
-
-- `@I` and `@>-1` are both rows
-- `$>` and `$>` are both columns
+Let's look at the source: `sum(@I..@-1)`. Again, if we ignore some of
+the concepts we haven't learned yet, we can identify a few rows here: `@I`
+and `@-1` are both rows
 
 In addition to using number to refer to specific rows and columns (referred
 to as absolute rows, or absolute columns), symbols can be used to dynamically
-refer to parts of the table (referred to as relative rows, and relative
-columns)
+refer to parts of the table.
 
 - `@<` and `$<` mean the first row and first column, respectively.
 - `@>` and `$>` mean the last row and last column, respectively.
 - `@I` referrs to the line separating the table header from the table body.
 
-Finally, a relative row or column reference can be used with an offset.
-Putting it all together we can read `@I+1` to mean "one row below the
-dividing line" and `@>-1` to mean "one row above the last row".
+Rows and columns can also be referenced in relation to the current cell being
+filled. For example, `@-1` means "the same column, one row above", and `$+2`
+would mean "the same row, two columns right".
+
+When writing a cell reference, if the row or column portion is omitted, it means "in the current row" or "in the current column". In our example, `@I` and `@-1` have both omitted the column, so these references are for the same column as the destination cell.
 
 ### Ranges
 
@@ -87,22 +85,22 @@ Ranges allow for doing just that. A range is denoted by two periods in a row
 between two row and/or columns.
 
 ```md
-@I+1$>..@>-1$>
+@I..@-1
 ```
 
-Our example from the top says "From the row after the header in the last
-column, to the second to last row in the last column."
+Our example from the top says "From the row after the header in the current
+column, to the row above this in the last column."
 
 ### Functions
 
 The last piece to our example is the function call.
 
 ```md
-<!-- TBLFM: @>$2=vsum(@I+1$>..@>-1$>) -->
+<!-- TBLFM: @>$2=sum(@I..@-1) -->
 ```
 
-In this example we are using the `vsum` function, and passing it the range
-described above as the input data. The details of how `vsum` operates will be
+In this example we are using the `sum` function, and passing it the range
+described above as the input data. The details of how `sum` operates will be
 discussed later in this document, but for now we can say it sums the provided
 input data, providing a single cell as the output.
 
@@ -111,33 +109,6 @@ input data, providing a single cell as the output.
 With that we understand all the components of the example formula. It adds
 the numbers from the second column, excluding the header and the final row,
 and places the result in the final row.
-
-## Arity
-
-In formulas, many operations require that there be a matching arity between
-the source and the destination. Arity is a description of how many rows and
-columns are in particular value. Take for example the following table:
-
-```md
-| Item      | Count |
-| --------- | ----- |
-| Apples    | 1     |
-| Oranges   | 3     |
-| Bananas   | 5     |
-| **Total** | 9     |
-```
-
-In this table, if I wrote a selector for the first two rows (`@3..@4` or
-`@3$1..@4$2`), then I am selecting two rows and two columns. This could be
-described as having an arity of `2x2`. If I instead selected a single cell
-(`@3$1`), then the arity would be `1x1`.
-
-In the formula components described below, they will often state what arity
-their result, or output is. When using the output as the input to another
-formula component, or when putting into a formula destination, it is
-necessary that the arity matches. For example, a formula such as `@2$3=@4` is
-invalid, because a full row (`@4`) can not be put in a single column
-(`@2$3`).
 
 ## Formula Components
 
@@ -154,25 +125,16 @@ specified as absolute values, or relative.
 - `$1` means the first column, and `$5` means the 5th column from the left.
 - `@<` and `$<` mean the first row and first column, respectively.
 - `@>` and `$>` mean the last row and last column, respectively.
-- `@I` refers to the line separating the table header from the table body.
+- `@I` refers to the first row of content below the header.
+- `@-1` means the the row above the cell being filled.
+- `$+2` means the column two right of the cell being filled.
 
 A row or column can be specified by themselves, or together in a combination.
-For example, `@5` means the entire 5th row. The arity will be 1 row by the
-table width (`1xN`). Similarly, `$5` will have an arity of the table height
-by 1 row (`Nx1`). When used together, they indicate a single cell. `@3$4` has
-an arity of `1x1`.
+For example, `@5` means the 5th row in the current column. Similarly, `$5`
+means the 5th column in the current row. When used together, they indicate a
+single cell.
 
 When used together, the row should always preceed the column.
-
-### Cell and Row Offsets
-
-Relative column and row values (for example, `@I` or `$>`) may optionally
-include an offset. Offsets, if provided, must include a `+` or `-` followed
-by a number.
-
-- `@>-1` - The second to last row
-- `@I+1` - The row after the header
-- `$<+2` - Equivalent to `$3`
 
 ### Ranges
 
