@@ -26,7 +26,7 @@ learning the details of any specific feature.
 | Salt              | 18    |
 | Starter           | 40    |
 | **Total Grams**   |       |
-<!-- TBLFM: @>$2=vsum(@I+1$>..@>-1$>) -->
+<!-- TBLFM:  @>$2=sum(@I..@-1) -->
 ```
 
 Formulas are added to tables as an HTML comment directly following the table.
@@ -46,7 +46,7 @@ down into two halves: where to retrieve data, and where to store the result.
 <!-- TBLFM: DESTINATION=SOURCE -->
 ```
 
-So in this formula, we are retrieving data from `vsum(@I+1$>..@>-1$>)` and
+So in this formula, we are retrieving data from `sum(@I..@-1)` and
 storing it in `@>$2`.
 
 ### Rows and Columns
@@ -56,25 +56,23 @@ the above formula, the destination for our calculated value is `@>$2`. We can
 break this down into `@>` and `$2`, meaning "last row" and "column 2". We'll
 dive into what "last row" means in a minute.
 
-Let's look at the source: `vsum(@I+1$>..@>-1$>)`. Again, if we ignore some of
-the concepts we haven't learned yet, we can identify a few rows and columns
-here.
-
-- `@I` and `@>-1` are both rows
-- `$>` and `$>` are both columns
+Let's look at the source: `sum(@I..@-1)`. Again, if we ignore some of
+the concepts we haven't learned yet, we can identify a few rows here: `@I`
+and `@-1` are both rows
 
 In addition to using number to refer to specific rows and columns (referred
 to as absolute rows, or absolute columns), symbols can be used to dynamically
-refer to parts of the table (referred to as relative rows, and relative
-columns)
+refer to parts of the table.
 
 - `@<` and `$<` mean the first row and first column, respectively.
 - `@>` and `$>` mean the last row and last column, respectively.
 - `@I` referrs to the line separating the table header from the table body.
 
-Finally, a relative row or column reference can be used with an offset.
-Putting it all together we can read `@I+1` to mean "one row below the
-dividing line" and `@>-1` to mean "one row above the last row".
+Rows and columns can also be referenced in relation to the current cell being
+filled. For example, `@-1` means "the same column, one row above", and `$+2`
+would mean "the same row, two columns right".
+
+When writing a cell reference, if the row or column portion is omitted, it means "in the current row" or "in the current column". In our example, `@I` and `@-1` have both omitted the column, so these references are for the same column as the destination cell.
 
 ### Ranges
 
@@ -87,22 +85,22 @@ Ranges allow for doing just that. A range is denoted by two periods in a row
 between two row and/or columns.
 
 ```md
-@I+1$>..@>-1$>
+@I..@-1
 ```
 
-Our example from the top says "From the row after the header in the last
-column, to the second to last row in the last column."
+Our example from the top says "From the row after the header in the current
+column, to the row above this in the last column."
 
 ### Functions
 
 The last piece to our example is the function call.
 
 ```md
-<!-- TBLFM: @>$2=vsum(@I+1$>..@>-1$>) -->
+<!-- TBLFM: @>$2=sum(@I..@-1) -->
 ```
 
-In this example we are using the `vsum` function, and passing it the range
-described above as the input data. The details of how `vsum` operates will be
+In this example we are using the `sum` function, and passing it the range
+described above as the input data. The details of how `sum` operates will be
 discussed later in this document, but for now we can say it sums the provided
 input data, providing a single cell as the output.
 
@@ -111,33 +109,6 @@ input data, providing a single cell as the output.
 With that we understand all the components of the example formula. It adds
 the numbers from the second column, excluding the header and the final row,
 and places the result in the final row.
-
-## Arity
-
-In formulas, many operations require that there be a matching arity between
-the source and the destination. Arity is a description of how many rows and
-columns are in particular value. Take for example the following table:
-
-```md
-| Item      | Count |
-| --------- | ----- |
-| Apples    | 1     |
-| Oranges   | 3     |
-| Bananas   | 5     |
-| **Total** | 9     |
-```
-
-In this table, if I wrote a selector for the first two rows (`@3..@4` or
-`@3$1..@4$2`), then I am selecting two rows and two columns. This could be
-described as having an arity of `2x2`. If I instead selected a single cell
-(`@3$1`), then the arity would be `1x1`.
-
-In the formula components described below, they will often state what arity
-their result, or output is. When using the output as the input to another
-formula component, or when putting into a formula destination, it is
-necessary that the arity matches. For example, a formula such as `@2$3=@4` is
-invalid, because a full row (`@4`) can not be put in a single column
-(`@2$3`).
 
 ## Formula Components
 
@@ -154,38 +125,29 @@ specified as absolute values, or relative.
 - `$1` means the first column, and `$5` means the 5th column from the left.
 - `@<` and `$<` mean the first row and first column, respectively.
 - `@>` and `$>` mean the last row and last column, respectively.
-- `@I` refers to the line separating the table header from the table body.
+- `@I` refers to the first row of content below the header.
+- `@-1` means the the row above the cell being filled.
+- `$+2` means the column two right of the cell being filled.
 
 A row or column can be specified by themselves, or together in a combination.
-For example, `@5` means the entire 5th row. The arity will be 1 row by the
-table width (`1xN`). Similarly, `$5` will have an arity of the table height
-by 1 row (`Nx1`). When used together, they indicate a single cell. `@3$4` has
-an arity of `1x1`.
+For example, `@5` means the 5th row in the current column. Similarly, `$5`
+means the 5th column in the current row. When used together, they indicate a
+single cell.
 
 When used together, the row should always preceed the column.
 
-### Cell and Row Offsets
-
-Relative column and row values (for example, `@I` or `$>`) may optionally
-include an offset. Offsets, if provided, must include a `+` or `-` followed
-by a number.
-
-- `@>-1` - The second to last row
-- `@I+1` - The row after the header
-- `$<+2` - Equivalent to `$3`
-
 ### Ranges
 
-With just rows and columns, the formula is limited to selecting cells with an
-arity of `1xN`, `Nx1`, or `1x1`. Using a range, a formula can select anywhere
-from a single cell to the entire table.
+With just rows and columns, the fomula is limited to selecting single cells,
+or full rows and columns. Using a range, a formula can select partial
+rows/columns, as well as multiple rows/columns.
 
 Ranges are created with a row and/or column, two dots, and another row and/or
 column. For example `@1..@3`. Note however, that the components on both sides
 must match. A range can not be from a row to a column, or a cell to a row.
 
 - `@2..$4` - Invalid, can not range from a row to a column.
-- `@2$3..@5` - Invalid, can not range from a cell to a row.
+- `@2$3..@5` - Valid, if column exists on first term and not second, it is carried to the second.
 - `@2$3..@5$5` - Valid, from one cell to another cell.
 - `$4..$6` - Valid, from one column to another column.
 
@@ -209,46 +171,81 @@ table. All algebraic operations must be contained in parenthesis.
 When adding, at least one of the specified values must be a single cell. A
 formula may not add one range to another range.
 
-- `(@2$3+@3$4)` - Valid, adding two cells. Arity `1x1`
-- `(@2+@3$4)` - Valid, add a single cell to each value in the row. Outputs a row.
-- `(@2$3+$4)` - Valid, add a single cell to each value in the column. Outputs a column.
-- `(@2+@3)` - Invalid, both operands are ranges.
-- `(@2+$3)` - Invalid, both operands are ranges.
-- `@2$3+$4` - Invalid, missing parenthesis
+- `(@2$3+@3$4)` - Valid, adding two cells.
+- `(@2+@3$4)` - Valid, add the value in row two of the current cell, to the cell @3$4.
+- `(@2$3+$4)` - Valid, add the value in @2$3 to the value in the current row, column $4.
+- `(@2+@3)` - Valid, add the value in the current column of row 2 to the current column of row 3.
+- `@2$3+$4` - Invalid, missing parenthesis.
 
-It does not matter which operand is a cell and which is a range.
+##### Add Example
+
+In this table, the right column started out looking just like the left, with
+only the first two values filled. The formula fills the last column from row
+4 to the last row. For each row, it adds the value of the previous two rows.
+You may recognize this as the [Fibonacci
+Sequence](https://en.wikipedia.org/wiki/Fibonacci_number)
+
+```md
+| Start | Fibonacci |
+|-------+-----------|
+|     1 |         1 |
+|     1 |         1 |
+|       |         2 |
+|       |         3 |
+|       |         5 |
+|       |         8 |
+|       |        13 |
+|       |        21 |
+<!-- TBLFM: @4$>..@>$>=(@-1+@-2) -->
+```
 
 #### Subtract
 
 Subtraction requires that the second operand be a single cell. The first
 operand may be a range or cell.
 
-- `(@2$3-@3$4)` - Valid, subtract two cells. Arity `1x1`
-- `(@2-@3$4)` - Valid, subtract a single cell from each value in the row. Outputs a row.
-- `(@3$4-@2)` - Invalid, may not subtract a range from a single cell.
-- `@2-@3$4` - Invalid, missing parenthesis
+- `(@2$3-@3$4)` - Valid, subtract two cells.
+- `(@2-@3$4)` - Valid, subtract a single cell from each value in the row.
+- `(@3$4-@2)` - Valid, the value in row two of the current column from @3$4.
+- `@2-@3$4` - Invalid, missing parenthesis.
+
+##### Subtract Example
+
+In this example, we are subtracting the value in row three (4, 5, 6) from the
+value in @2$3 (3). Notice how each result (-1, -2, -3) subtracted the value in
+the corresponding cell of row three.
+
+```md
+| One | Two | Three |
+|-----+-----+-------|
+|   1 |   2 |     3 |
+|   4 |   5 |     6 |
+|  -1 |  -2 |    -3 |
+#+TBLFM: @>=(@2$3-@3)
+```
 
 #### Multiply
 
 Multiplication requires at least one value be a single cell. A formula may
 not multiply one range with another range.
 
-- `(@2$3*@3$4)` - Valid, multiplying two cells. Arity `1x1`
-- `(@2*@3$4)` - Valid, multiply a single cell with each value in the row. Outputs a row.
-- `(@2$3*$4)` - Valid, multiply a single cell with each value in the column. Outputs a column.
-- `(@2*@3)` - Invalid, both operands are ranges.
-- `(@2*$3)` - Invalid, both operands are ranges.
-- `@2$3*$4` - Invalid, missing parenthesis
+- `(@2$3*@3$4)` - Valid, multiplying two cells.
+- `(@2*@3$4)` - Valid, multiply a single cell with the current column in row 2.
+- `(@2$3*$4)` - Valid, multiply a single cell with the current row in column 4.
+- `(@2*@3)` - Valid, multiply the current column in row 2 with the current column in row 3.
+- `(@2..@3*@2$4..@4$4)` - Invalid, both operands are ranges.
+- `@2$3*$4` - Invalid, missing parenthesis.
 
 #### Divide
 
 Division requires that the second operand be a single cell. The first operand
 may be a range or a cell.
 
-- `(@2$3/@3$4)` - Valid, divide two cells. Arity `1x1`
-- `(@2/@3$4)` - Valid, divide each value in the row by s single cell. Outputs a row.
-- `(@3$4/@2)` - Invalid, may not divide a single cell by a range.
-- `@2/@3$4` - Invalid, missing parenthesis
+- `(@2$3/@3$4)` - Valid, divide two cells.
+- `(@2/@3$4)` - Valid, divide each value in the row by s single cell.
+- `(@3$4/@2)` - Valid, divide a single cell by the current column in row 2.
+- `(@3$4/@2..@3)` - Invalid, may not divide a single cell by a range.
+- `@2/@3$4` - Invalid, missing parenthesis.
 
 ### Conditional Operations
 
@@ -275,42 +272,53 @@ Comparisons can only be made between cells, not ranges.
 - `==` - Equal
 - `!=` - Not equal
 
+#### Conditional Example
+
+This conditional operation sets the values in the last column (except the
+header). For each row, it checks if the first column is greater than three.
+If it is, that value is put in the last column, otherwise the value of three
+is put in the last column.
+
+In other words, this function sets the last column to the greater of the
+first column and three.
+
+```md
+| One | Two | Three |
+|-----+-----+-------|
+|   1 |   2 |     3 |
+|   4 |   5 |     4 |
+|  -1 |  -2 |     3 |
+#+TBLFM: $>=if($1>3, $1, 3)
+```
+
 ### Functions
 
 Functions look very similar to conditional operations. A keyword followed by
-parenthesis with values inside. For example, `vmean(@3$<..@3$4)`. A function
+parenthesis with values inside. For example, `mean(@3$<..@3$4)`. A function
 call passes in the data from the provided range, cell, row, or column, then
 performs a caculation and provides back the result.
 
-There are four functions that can be used:
+There are two functions that can be used:
 
 #### sum
 
-`sum` is very similar to the addiition algebraic operation above, but it will
+`sum` is very similar to the addition algebraic operation above, but it will
 add all the cells in the provided range, row, or column together and output a
-single cell result. This means you can use `sum` anywhere that a `1x1` arity
-is expected, such as in a comparison operation or assigning to a cell.
+single cell result.
 
 ```md
-<!-- TBLFM: @5$3=sum(@3..@4) -->
+|       One | Two | Three |
+|-----------+-----+-------|
+|         1 |   2 |       |
+|         4 |   5 |       |
+| **Total** |     |    12 |
+<!-- TBLFM: @>$>=sum(@2$<..@3$2) -->
 ```
-
-#### vsum
-
-`vsum` is the "vertical" variant of `sum`. It will only sum values in a
-column, producing a row of output. For example, `vsum` could be used for the
-"Totals" row at the bottom of a table, to add each of the individual columns
-in the table.
 
 #### mean
 
 `mean` calculates the average of the provided range, row, or column. Like
 `sum` it will output a single cell result.
-
-#### vmean
-
-`vmean` is the "vertical" variant of `mean`. It will only average values in a
-column, producing a row of output.
 
 ## Nesting
 
@@ -318,7 +326,7 @@ The different building blocks of a function can be nested, as long as their
 arity matches. For example, the output from `sum` can be used as an input for
 a conditional operation. Here are a few examples of valid nesting:
 
-- `<!-- TBLFM: @>=vsum(@3..@4)+@3$1 -->` - Add `@3$1` to each column output by `vsum`
+- `<!-- TBLFM: @>=sum(@3..@4)+@3$1 -->` - Add `@3$1` to each column output by `sum`
 - `<!-- TBLFM: @3$3=if(@2$4+@2$5==@2$6, @3$3, @4$3) -->` - Add two cells in the comparison
 
 ## Chaining and Multiple Formulas
@@ -365,7 +373,7 @@ decimal points by using a formatting directive. For example:
 | 1   | 2   | 5   | 6   |
 | 3   | 4   | 7   | 8   |
 |     |     |     |     |
-<!-- TBLFM: @>=(@I+1 / @4$3);%.2f -->
+<!-- TBLFM: @>=(@I / @4$3);%.2f -->
 ```
 
 In this example, the formatting directive is the `;%.2f` at the end. Without
@@ -374,6 +382,6 @@ we have requested `2` decimal points, the results will instead be `0.14`.
 
 ## Conclusion
 
-This documentation is a work in progress, and I am not a technical writer.
-Please help improve this documentation by sending your questions or
-suggestions to <https://github.com/tgrosinger/md-advanced-tables/issues>.
+This documentation is a work in progress. Please help improve this
+documentation by sending your questions or suggestions to
+<https://github.com/tgrosinger/md-advanced-tables/issues>.
