@@ -9,6 +9,13 @@ functionality such as table sorting, and spreadsheet capabilities.
 
 ![demo](https://raw.githubusercontent.com/tgrosinger/advanced-tables-obsidian/main/resources/screenshots/basic-functionality.gif)
 
+## Spreadsheets and Formulas
+
+To learn more about the spreadsheet and formula capabilities, check out the
+[Formulas in Markdown
+Tables](https://github.com/tgrosinger/md-advanced-tables/blob/main/docs/formulas.md)
+page.
+
 ## Implementations
 
 This is a list of known implementations of this library:
