@@ -8,7 +8,6 @@ module.exports = {
   },
   plugins: [
     "@typescript-eslint",
-    "babel",
     "import",
     "jsdoc",
     "prefer-arrow",
@@ -79,7 +78,6 @@ module.exports = {
     "@typescript-eslint/prefer-readonly": "error",
     "@typescript-eslint/quotes": ["error", "single", { avoidEscape: true }],
     "arrow-body-style": ["error", "as-needed"],
-    "babel/no-invalid-this": "error",
     "constructor-super": "error",
     curly: ["error", "multi-line"],
     eqeqeq: "error",
