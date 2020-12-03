@@ -1,24 +1,32 @@
 # Markdown Advanced Tables
 
-This library can be used by any text editor to enable formatting and
-Excel-style navigation to Markdown tables.
+This library can be used by any text editor to enable formatting,
+Excel-style navigation, and spreadsheet formulas to Markdown tables.
 
-**Note:** This was originally created by [@susisu](https://github.com/susisu).
-This fork is intended to convert the project to Typescript and start adding
-additional functionality such as table sorting, and possibly even basic
-spreadsheet capabilities.
+It was originally created by [@susisu](https://github.com/susisu).
+This fork converts the project to Typescript and adds additional
+functionality such as table sorting, and spreadsheet capabilities.
 
-![demo](https://github.com/susisu/markdown-table-editor/wiki/images/demo.gif)
+![demo](https://raw.githubusercontent.com/tgrosinger/advanced-tables-obsidian/main/resources/screenshots/basic-functionality.gif)
 
-[You can try it on your browser!](https://susisu.github.io/mte-demo/)
+## Implementations
+
+This is a list of known implementations of this library:
+
+- [Advanced Tables Obsidian](https://github.com/tgrosinger/advanced-tables-obsidian/) for [Obsidian.md](https://obsidian.md) (reference implementation)
+- [atom-markdown-table-editor](https://github.com/susisu/atom-markdown-table-editor) for Atom (uses the original mte-kernel)
+- [table-editor](https://my.inkdrop.app/plugins/table-editor) for Inkdrop (uses the original mte-kernel)
 
 ## Installation
 
-TBD
+```
+npm i @tgrosinger/md-advanced-tables
+```
 
 ## Usage
 
-Implement an [interface to the text editor][doc-ITextEditor].
+Implement an [interface to the text
+editor](https://github.com/tgrosinger/md-advanced-tables/blob/main/src/text-editor.ts).
 
 ``` javascript
 interface ITextEditor {
@@ -35,7 +43,9 @@ interface ITextEditor {
 }
 ```
 
-And then you can execute [commands][doc-TableEditor] through a `TableEditor` object.
+And then you can execute
+[commands](https://github.com/tgrosinger/md-advanced-tables/blob/main/src/table-editor.ts)
+through a `TableEditor` object.
 
 ``` javascript
 import { TableEditor, options } from "@susisu/mte-kernel";
@@ -44,14 +54,7 @@ const tableEditor = new TableEditor(textEditor);
 tableEditor.formatAll(options({}));
 ```
 
-See the [API reference][doc-API] for more information.
-It is also good to look into [atom-markdown-table-editor][atom-mte-repo] as a reference implementation.
-
-[doc-API]: https://doc.esdoc.org/github.com/susisu/mte-kernel/identifiers.html
-[doc-ITextEditor]:  https://doc.esdoc.org/github.com/susisu/mte-kernel/class/lib/text-editor.js~ITextEditor.html
-[doc-TableEditor]:  https://doc.esdoc.org/github.com/susisu/mte-kernel/class/lib/table-editor.js~TableEditor.html
-[atom-mte]: https://atom.io/packages/markdown-table-editor
-[atom-mte-repo]: https://github.com/susisu/atom-markdown-table-editor
+Look at [advanced-tables-obsidian](https://github.com/tgrosinger/advanced-tables-obsidian) as a reference implementation for more information.
 
 ## Pricing
 
