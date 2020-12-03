@@ -18,7 +18,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "lint": "eslint src --ext .ts --fix",
+    "eslint": "eslint src --ext .ts --fix",
     "test": "mocha -r ts-node/register 'test/*.ts'",
     "cover": "nyc -r html -r text npm test",
     "build": "tsc",
