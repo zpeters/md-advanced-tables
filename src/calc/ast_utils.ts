@@ -1,7 +1,7 @@
-import { IToken } from 'ebnf';
 import { Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { Value } from './results';
+import { IToken } from 'ebnf';
 
 export const errIndex0 = new Error('Index 0 used to create a reference');
 export const errRelativeReferenceIndex = new Error(

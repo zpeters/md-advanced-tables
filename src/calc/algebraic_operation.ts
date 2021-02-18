@@ -1,11 +1,11 @@
 import { Table } from '..';
 import { err, ok, Result } from '../neverthrow/neverthrow';
+import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
 import { Source } from './calc';
+import { Constant } from './constant';
 import { Value } from './results';
 import { IToken } from 'ebnf';
 import { map } from 'lodash';
-import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
-import { Constant } from './constant';
 
 export class AlgebraicOperation implements ValueProvider {
   private readonly leftSource: ValueProvider;
@@ -66,11 +66,11 @@ export class AlgebraicOperation implements ValueProvider {
     canHaveRightRange: boolean,
     fn: (left: number, right: number) => number,
   ): Result<Value, Error> => {
-    let leftValue = this.leftSource.getValue(table, cell);
+    const leftValue = this.leftSource.getValue(table, cell);
     if (leftValue.isErr()) {
       return err(leftValue.error);
     }
-    let rightValue = this.rightSource.getValue(table, cell);
+    const rightValue = this.rightSource.getValue(table, cell);
     if (rightValue.isErr()) {
       return err(rightValue.error);
     }
@@ -107,7 +107,7 @@ export class AlgebraicOperation implements ValueProvider {
           }),
       );
       return ok(new Value(result));
-    } else {
+    } 
       const leftCellValue = leftValue.value.getAsFloat(0, 0);
 
       const result: string[][] = map(
@@ -122,7 +122,7 @@ export class AlgebraicOperation implements ValueProvider {
           }),
       );
       return ok(new Value(result));
-    }
+    
   };
 
   private readonly add = (table: Table, cell: Cell): Result<Value, Error> =>

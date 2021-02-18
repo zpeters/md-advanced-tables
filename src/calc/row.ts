@@ -1,4 +1,3 @@
-import { IToken } from 'ebnf';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import {
@@ -10,6 +9,7 @@ import {
   ValueProvider,
 } from './ast_utils';
 import { Value } from './results';
+import { IToken } from 'ebnf';
 
 export const newRow = (ast: IToken, table: Table): Result<Row, Error> => {
   try {
@@ -22,7 +22,7 @@ export const newRow = (ast: IToken, table: Table): Result<Row, Error> => {
         return err(
           new Error(
             `Formula element '${ast.text}' is a ${ast.type} but expected an ` +
-              `relatve_row or absolute_row  in this position.`,
+              'relatve_row or absolute_row  in this position.',
           ),
         );
     }
@@ -46,7 +46,7 @@ export abstract class Row implements ValueProvider {
 }
 
 class RelativeRow extends Row {
-  private offset: number;
+  private readonly offset: number;
 
   constructor(ast: IToken, table: Table) {
     super();
@@ -95,7 +95,7 @@ export class AbsoluteRow extends Row {
       default:
         throw new Error(
           `Formula element '${ast.text}' is a ${ast.type} but expected ` +
-            `a 'absolute_row' in this position.`,
+            'a \'absolute_row\' in this position.',
         );
     }
 

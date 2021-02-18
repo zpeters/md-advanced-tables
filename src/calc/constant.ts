@@ -1,11 +1,11 @@
-import { IToken } from 'ebnf';
 import { ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { Cell, checkType, ValueProvider } from './ast_utils';
 import { Value } from './results';
+import { IToken } from 'ebnf';
 
 export class Constant implements ValueProvider {
-  private value: number;
+  private readonly value: number;
 
   constructor(ast: IToken, table: Table) {
     const typeErr = checkType(ast, 'real');

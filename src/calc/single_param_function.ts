@@ -20,7 +20,7 @@ export class SingleParamFunctionCall implements ValueProvider {
       throw lengthError;
     }
 
-    let childTypeError = checkType(ast.children[0], 'single_param_function');
+    const childTypeError = checkType(ast.children[0], 'single_param_function');
     if (childTypeError) {
       throw childTypeError;
     }

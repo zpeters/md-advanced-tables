@@ -1,18 +1,18 @@
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
+import { Column } from './column';
 import { Reference } from './reference';
 import { Value } from './results';
+import { Row } from './row';
 import { IToken } from 'ebnf';
 import { flatMap, map, range } from 'lodash';
-import { Row } from './row';
-import { Column } from './column';
 
 export class Range implements ValueProvider {
-  private startRow: Row | undefined;
-  private startColumn: Column | undefined;
-  private endRow: Row | undefined;
-  private endColumn: Column | undefined;
+  private readonly startRow: Row | undefined;
+  private readonly startColumn: Column | undefined;
+  private readonly endRow: Row | undefined;
+  private readonly endColumn: Column | undefined;
 
   constructor(ast: IToken, table: Table) {
     let typeErr = checkType(ast, 'range');
@@ -79,19 +79,19 @@ export class Range implements ValueProvider {
     currentCell: Cell,
   ): Result<Value, Error> => {
     // if no start column is provided, copy it from the currentCell
-    let startColumn = this.startColumn
+    const startColumn = this.startColumn
       ? this.startColumn.getIndex(currentCell)
       : currentCell.column;
 
     // if the column is provided in the first set, but not the second, copy it
-    let endColumn = this.endColumn
+    const endColumn = this.endColumn
       ? this.endColumn.getIndex(currentCell)
       : startColumn;
 
-    let startRow = this.startRow
+    const startRow = this.startRow
       ? this.startRow.getIndex(currentCell)
       : currentCell.row;
-    let endRow = this.endRow
+    const endRow = this.endRow
       ? this.endRow.getIndex(currentCell)
       : currentCell.row;
 
@@ -124,10 +124,10 @@ export class Range implements ValueProvider {
       endColumn = this.startColumn;
     }
 
-    const startRowIndex = this.startRow.getAbsoluteIndex(),
-      endRowIndex = this.endRow.getAbsoluteIndex(),
-      startColumnIndex = this.startColumn.getAbsoluteIndex(),
-      endColumnIndex = endColumn.getAbsoluteIndex();
+    const startRowIndex = this.startRow.getAbsoluteIndex();
+      const endRowIndex = this.endRow.getAbsoluteIndex();
+      const startColumnIndex = this.startColumn.getAbsoluteIndex();
+      const endColumnIndex = endColumn.getAbsoluteIndex();
 
     if (
       startRowIndex.isErr() ||
@@ -140,17 +140,15 @@ export class Range implements ValueProvider {
       );
     }
 
-    const minRow = Math.min(startRowIndex.value, endRowIndex.value),
-      maxRow = Math.max(startRowIndex.value, endRowIndex.value),
-      minColumn = Math.min(startColumnIndex.value, endColumnIndex.value),
-      maxColumn = Math.max(startColumnIndex.value, endColumnIndex.value);
+    const minRow = Math.min(startRowIndex.value, endRowIndex.value);
+      const maxRow = Math.max(startRowIndex.value, endRowIndex.value);
+      const minColumn = Math.min(startColumnIndex.value, endColumnIndex.value);
+      const maxColumn = Math.max(startColumnIndex.value, endColumnIndex.value);
 
     return ok(
       flatMap(range(minRow, maxRow + 1), (rowNum): Cell[] =>
         range(minColumn, maxColumn + 1).map(
-          (colNum): Cell => {
-            return { row: rowNum, column: colNum };
-          },
+          (colNum): Cell => ({ row: rowNum, column: colNum }),
         ),
       ),
     );

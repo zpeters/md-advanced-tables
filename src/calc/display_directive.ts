@@ -1,5 +1,5 @@
-import { IToken } from 'ebnf';
 import { checkChildLength, checkType } from './ast_utils';
+import { IToken } from 'ebnf';
 
 export interface Formatter {
   format(num: number | string): string;
@@ -15,7 +15,7 @@ export class DefaultFormatter {
 }
 
 export class DisplayDirective {
-  private decimalLength: number;
+  private readonly decimalLength: number;
 
   constructor(ast: IToken) {
     let typeError = checkType(ast, 'display_directive');

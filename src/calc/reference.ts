@@ -1,10 +1,10 @@
 import { ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { Cell, checkType, errIndex0 } from './ast_utils';
-import { IToken } from 'ebnf';
+import { Column, newColumn } from './column';
 import { Value } from './results';
 import { newRow, Row } from './row';
-import { Column, newColumn } from './column';
+import { IToken } from 'ebnf';
 
 export class Reference {
   row: Row | undefined;

@@ -1,5 +1,3 @@
-import { IToken } from 'ebnf';
-import { range } from 'lodash';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { Cell, checkChildLength, checkType, errIndex0 } from './ast_utils';
@@ -8,6 +6,8 @@ import { AbsoluteColumn } from './column';
 import { Formatter } from './display_directive';
 import { Range } from './range';
 import { AbsoluteRow } from './row';
+import { IToken } from 'ebnf';
+import { range } from 'lodash';
 
 export interface Destination {
   merge(source: Source, table: Table): Result<Table, Error>;
@@ -58,8 +58,8 @@ export const newDestination = (
 };
 
 export class RowDestination implements Destination {
-  private row: AbsoluteRow;
-  private formatter: Formatter;
+  private readonly row: AbsoluteRow;
+  private readonly formatter: Formatter;
 
   constructor(ast: IToken, table: Table, formatter: Formatter) {
     this.formatter = formatter;
@@ -86,17 +86,15 @@ export class RowDestination implements Destination {
   public merge = (source: Source, table: Table): Result<Table, Error> => {
     // for cell in row...
     const cells = range(0, table.getWidth()).map(
-      (columnNum): Cell => {
-        return { row: this.row.index, column: columnNum };
-      },
+      (columnNum): Cell => ({ row: this.row.index, column: columnNum }),
     );
     return mergeForCells(source, table, cells, this.formatter);
   };
 }
 
 export class ColumnDestination implements Destination {
-  private column: AbsoluteColumn;
-  private formatter: Formatter;
+  private readonly column: AbsoluteColumn;
+  private readonly formatter: Formatter;
 
   constructor(ast: IToken, table: Table, formatter: Formatter) {
     this.formatter = formatter;
@@ -123,18 +121,16 @@ export class ColumnDestination implements Destination {
   public merge = (source: Source, table: Table): Result<Table, Error> => {
     // for cell in column (excluding header)...
     const cells = range(2, table.getHeight()).map(
-      (rowNum): Cell => {
-        return { row: rowNum, column: this.column.index };
-      },
+      (rowNum): Cell => ({ row: rowNum, column: this.column.index }),
     );
     return mergeForCells(source, table, cells, this.formatter);
   };
 }
 
 export class CellDestination implements Destination {
-  private row: AbsoluteRow;
-  private column: AbsoluteColumn;
-  private formatter: Formatter;
+  private readonly row: AbsoluteRow;
+  private readonly column: AbsoluteColumn;
+  private readonly formatter: Formatter;
 
   constructor(ast: IToken, table: Table, formatter: Formatter) {
     this.formatter = formatter;
@@ -169,13 +165,13 @@ export class CellDestination implements Destination {
 }
 
 export class RangeDestination implements Destination {
-  private range: Range;
-  private formatter: Formatter;
+  private readonly range: Range;
+  private readonly formatter: Formatter;
 
   constructor(ast: IToken, table: Table, formatter: Formatter) {
     this.formatter = formatter;
 
-    let typeErr = checkType(ast, 'range');
+    const typeErr = checkType(ast, 'range');
     if (typeErr) {
       throw typeErr;
     }

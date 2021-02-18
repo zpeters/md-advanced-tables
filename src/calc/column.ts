@@ -1,4 +1,3 @@
-import { IToken } from 'ebnf';
 import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import {
@@ -10,6 +9,7 @@ import {
   ValueProvider,
 } from './ast_utils';
 import { Value } from './results';
+import { IToken } from 'ebnf';
 
 export const newColumn = (ast: IToken, table: Table): Result<Column, Error> => {
   try {
@@ -22,7 +22,7 @@ export const newColumn = (ast: IToken, table: Table): Result<Column, Error> => {
         return err(
           new Error(
             `Formula element '${ast.text}' is a ${ast.type} but expected an ` +
-              `relatve_column or absolute_column in this position.`,
+              'relatve_column or absolute_column in this position.',
           ),
         );
     }
@@ -45,7 +45,7 @@ export abstract class Column implements ValueProvider {
 }
 
 class RelativeColumn extends Column {
-  private offset: number;
+  private readonly offset: number;
 
   constructor(ast: IToken, table: Table) {
     super();
@@ -64,9 +64,7 @@ class RelativeColumn extends Column {
     this.offset = multiplier * parseInt(ast.children[0].text);
   }
 
-  public getIndex = (currentCell: Cell): number => {
-    return currentCell.column + this.offset;
-  };
+  public getIndex = (currentCell: Cell): number => currentCell.column + this.offset;
 
   public getAbsoluteIndex = (): Result<number, Error> =>
     err(errRelativeReferenceIndex);
@@ -95,7 +93,7 @@ export class AbsoluteColumn extends Column {
       default:
         throw new Error(
           `Formula element '${ast.text}' is a ${ast.type} but expected ` +
-            `a 'absolute_column' in this position.`,
+            'a \'absolute_column\' in this position.',
         );
     }
 

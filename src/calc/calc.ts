@@ -2,20 +2,20 @@ import { err, ok, Result } from '../neverthrow/neverthrow';
 import { Table } from '../table';
 import { AlgebraicOperation } from './algebraic_operation';
 import { Cell, checkChildLength, checkType, ValueProvider } from './ast_utils';
-import { Reference } from './reference';
 import { ConditionalFunctionCall } from './conditional_function';
-import { Range } from './range';
-import { Value } from './results';
-import { SingleParamFunctionCall } from './single_param_function';
-import { Grammars, IToken } from 'ebnf';
-import { concat } from 'lodash';
+import { Constant } from './constant';
+import { Destination, newDestination } from './destination';
 import {
   DefaultFormatter,
   DisplayDirective,
   Formatter,
 } from './display_directive';
-import { Destination, newDestination } from './destination';
-import { Constant } from './constant';
+import { Range } from './range';
+import { Reference } from './reference';
+import { Value } from './results';
+import { SingleParamFunctionCall } from './single_param_function';
+import { Grammars, IToken } from 'ebnf';
+import { concat } from 'lodash';
 
 /**
  * W3C grammar describing a valid formula at the bottom of a table.
@@ -82,9 +82,7 @@ export class Formula {
     this.source = new Source(ast.children[1], table);
   }
 
-  public merge = (table: Table): Result<Table, Error> => {
-    return this.destination.merge(this.source, table);
-  };
+  public merge = (table: Table): Result<Table, Error> => this.destination.merge(this.source, table);
 }
 
 export class Source {
@@ -109,9 +107,7 @@ export class Source {
   /**
    * getValue returns the evaluated value for this source recursively.
    */
-  public getValue = (table: Table, currentCell: Cell): Result<Value, Error> => {
-    return this.locationDescriptor.getValue(table, currentCell);
-  };
+  public getValue = (table: Table, currentCell: Cell): Result<Value, Error> => this.locationDescriptor.getValue(table, currentCell);
 }
 
 const newValueProvider = (
