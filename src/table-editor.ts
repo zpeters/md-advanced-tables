@@ -1117,6 +1117,31 @@ export class TableEditor {
   }
 
   /**
+   * Exports the table as a two dimensional string array
+   */
+  public exportTable(withtHeaders:boolean, options: Options): string[][] | undefined {
+    return this.withCompletedTable(
+      options,
+      ({ range, lines, formulaLines, table, focus }: TableInfo) => {
+        const bodyRows = table.getRows();
+        if(bodyRows.length > 0 && !withtHeaders) {
+          bodyRows.splice(0, 2);
+        }
+        // else if(bodyRows.length > 1) bodyRows.splice(1, 1);
+        return bodyRows.map(row=>row.getCells().map(cell=>cell.content));
+      },
+    );
+  }
+
+  /**
+   * Exports the table as a two dimensional string array
+   */
+  public exportCSV(withtHeaders:boolean, options: Options): string | undefined {
+    const r = this.exportTable(withtHeaders, options);
+    return !r ? undefined : r.map(row=>row.join('\t')).join('\n');
+  }
+
+  /**
    * Finds a table, completes it, then does an operation with it.
    *
    * @param func - A function that does some operation on table information obtained by

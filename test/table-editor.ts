@@ -5536,6 +5536,68 @@ describe('TableEditor', () => {
   });
 
   /**
+   * @test {TableEditor#exportTable}
+   */
+  describe('#exportTable(withHeader, defaultOptions)', () => {
+    it('should export out the grid as two dimensional array with headers', () => {
+      {
+        const textEditor = new TextEditor([
+          '| A   | B   |',
+          '| C   | D   |',
+          '| E   | F   |'
+        ]);
+        const tableEditor = new TableEditor(textEditor);
+        const result = tableEditor.exportTable(true, defaultOptions);
+        expect(result).to.be.eql([['A', 'B'], ['---', '---'], ['C', 'D'], ['E', 'F']]);
+      }
+    })
+
+    it('should export out the grid as two dimensional array without headers', () => {
+      {
+        const textEditor = new TextEditor([
+          '| A   | B   |',
+          '| C   | D   |',
+          '| E   | F   |'
+        ]);
+        const tableEditor = new TableEditor(textEditor);
+        const result = tableEditor.exportTable(false, defaultOptions);
+        expect(result).to.be.eql([['C', 'D'], ['E', 'F']]);
+      }
+    })
+  });
+
+   /**
+   * @test {TableEditor#exportCSV}
+   */
+  describe('#exportCSV(withHeader, defaultOptions)', () => {
+    it('should export out the grid as two dimensional array with headers', () => {
+      {
+        const textEditor = new TextEditor([
+          '| A   | B   |',
+          '| C   | D   |',
+          '| E   | F   |'
+        ]);
+        const tableEditor = new TableEditor(textEditor);
+        const result = tableEditor.exportCSV(true, defaultOptions);
+        expect(result).to.be.eql('A\tB\n---\t---\nC\tD\nE\tF');
+      }
+    })
+
+    it('should export out the grid as two dimensional array without headers', () => {
+      {
+        const textEditor = new TextEditor([
+          '| A   | B   |',
+          '| C   | D   |',
+          '| E   | F   |'
+        ]);
+        const tableEditor = new TableEditor(textEditor);
+        const result = tableEditor.exportCSV(false, defaultOptions);
+        expect(result).to.be.eql('C\tD\nE\tF');
+      }
+    })
+  });
+
+  /**
    * @test {TableEditor#formatAll}
    */
   describe('#formatAll(options)', () => {
