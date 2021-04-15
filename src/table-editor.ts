@@ -846,12 +846,24 @@ export class TableEditor {
 
   /**
    * Sorts rows alphanumerically using the column at the current focus.
+   * If all cells in the sorting column are numbers, the column is sorted
+   * numerically.
    */
   public sortRows(sortOrder: SortOrder, options: Options): void {
     this.withCompletedTable(
       options,
       ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         const bodyRows = table.getRows().slice(2);
+
+        const sortingCells = bodyRows.map((row) => row.getCellAt(focus.column));
+        const notAllNums = sortingCells.some((cell) => {
+          // return true if not a number
+          if (!cell || cell.content === '') {
+            return true;
+          }
+          return isNaN(parseFloat(cell.content));
+        });
+
         bodyRows.sort((rowA, rowB): number => {
           const cellA = rowA.getCellAt(focus.column);
           const cellB = rowB.getCellAt(focus.column);
@@ -865,8 +877,12 @@ export class TableEditor {
             return 1;
           }
 
-          const contentA = cellA.content;
-          const contentB = cellB.content;
+          const contentA = notAllNums
+            ? cellA.content
+            : parseFloat(cellA.content);
+          const contentB = notAllNums
+            ? cellB.content
+            : parseFloat(cellB.content);
 
           if (contentA === contentB) {
             return 0;
@@ -1119,16 +1135,21 @@ export class TableEditor {
   /**
    * Exports the table as a two dimensional string array
    */
-  public exportTable(withtHeaders:boolean, options: Options): string[][] | undefined {
+  public exportTable(
+    withtHeaders: boolean,
+    options: Options,
+  ): string[][] | undefined {
     return this.withCompletedTable(
       options,
       ({ range, lines, formulaLines, table, focus }: TableInfo) => {
         const bodyRows = table.getRows();
-        if(bodyRows.length > 0 && !withtHeaders) {
+        if (bodyRows.length > 0 && !withtHeaders) {
           bodyRows.splice(0, 2);
         }
         // else if(bodyRows.length > 1) bodyRows.splice(1, 1);
-        return bodyRows.map(row=>row.getCells().map(cell=>cell.content));
+        return bodyRows.map((row) =>
+          row.getCells().map((cell) => cell.content),
+        );
       },
     );
   }
@@ -1136,9 +1157,12 @@ export class TableEditor {
   /**
    * Exports the table as a two dimensional string array
    */
-  public exportCSV(withtHeaders:boolean, options: Options): string | undefined {
+  public exportCSV(
+    withtHeaders: boolean,
+    options: Options,
+  ): string | undefined {
     const r = this.exportTable(withtHeaders, options);
-    return !r ? undefined : r.map(row=>row.join('\t')).join('\n');
+    return !r ? undefined : r.map((row) => row.join('\t')).join('\n');
   }
 
   /**

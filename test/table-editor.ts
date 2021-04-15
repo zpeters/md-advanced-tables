@@ -4768,6 +4768,99 @@ describe('TableEditor', () => {
           'bar',
         ]);
       }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | 2   |',
+          '| 1   | 6   |',
+          '| C   | 8   |',
+          '| 5   | 3   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(4, 10));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Descending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(4);
+        expect(pos.column).to.equal(8);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| C   | 8   |',
+          '| 1   | 6   |',
+          '| 5   | 3   |',
+          '| E   | 2   |',
+          'bar',
+        ]);
+      }
+      {
+        // If all cells are numbers, sort numberically not alphabetically
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | 2   |',
+          '| E   | 12  |',
+          '| 1   | 6   |',
+          '| C   | 1   |',
+          '| 5   | 3   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(4, 10));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Descending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(4);
+        expect(pos.column).to.equal(8);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | 12  |',
+          '| 1   | 6   |',
+          '| 5   | 3   |',
+          '| E   | 2   |',
+          '| C   | 1   |',
+          'bar',
+        ]);
+      }
+      {
+        // If all cells are numbers, sort numberically not alphabetically
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| E   | 2   |',
+          '| E   | 12  |',
+          '| 1   | A   |',
+          '| C   | 1   |',
+          '| 5   | 3   |',
+          'bar',
+        ]);
+        textEditor.setCursorPosition(new Point(4, 10));
+        const tableEditor = new TableEditor(textEditor);
+        tableEditor.sortRows(SortOrder.Descending, defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(pos.row).to.equal(4);
+        expect(pos.column).to.equal(8);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   |',
+          '| --- | --- |',
+          '| 1   | A   |',
+          '| 5   | 3   |',
+          '| E   | 2   |',
+          '| E   | 12  |',
+          '| C   | 1   |',
+          'bar',
+        ]);
+      }
     });
   });
 
@@ -5544,29 +5637,37 @@ describe('TableEditor', () => {
         const textEditor = new TextEditor([
           '| A   | B   |',
           '| C   | D   |',
-          '| E   | F   |'
+          '| E   | F   |',
         ]);
         const tableEditor = new TableEditor(textEditor);
         const result = tableEditor.exportTable(true, defaultOptions);
-        expect(result).to.be.eql([['A', 'B'], ['---', '---'], ['C', 'D'], ['E', 'F']]);
+        expect(result).to.be.eql([
+          ['A', 'B'],
+          ['---', '---'],
+          ['C', 'D'],
+          ['E', 'F'],
+        ]);
       }
-    })
+    });
 
     it('should export out the grid as two dimensional array without headers', () => {
       {
         const textEditor = new TextEditor([
           '| A   | B   |',
           '| C   | D   |',
-          '| E   | F   |'
+          '| E   | F   |',
         ]);
         const tableEditor = new TableEditor(textEditor);
         const result = tableEditor.exportTable(false, defaultOptions);
-        expect(result).to.be.eql([['C', 'D'], ['E', 'F']]);
+        expect(result).to.be.eql([
+          ['C', 'D'],
+          ['E', 'F'],
+        ]);
       }
-    })
+    });
   });
 
-   /**
+  /**
    * @test {TableEditor#exportCSV}
    */
   describe('#exportCSV(withHeader, defaultOptions)', () => {
@@ -5575,26 +5676,26 @@ describe('TableEditor', () => {
         const textEditor = new TextEditor([
           '| A   | B   |',
           '| C   | D   |',
-          '| E   | F   |'
+          '| E   | F   |',
         ]);
         const tableEditor = new TableEditor(textEditor);
         const result = tableEditor.exportCSV(true, defaultOptions);
         expect(result).to.be.eql('A\tB\n---\t---\nC\tD\nE\tF');
       }
-    })
+    });
 
     it('should export out the grid as two dimensional array without headers', () => {
       {
         const textEditor = new TextEditor([
           '| A   | B   |',
           '| C   | D   |',
-          '| E   | F   |'
+          '| E   | F   |',
         ]);
         const tableEditor = new TableEditor(textEditor);
         const result = tableEditor.exportCSV(false, defaultOptions);
         expect(result).to.be.eql('C\tD\nE\tF');
       }
-    })
+    });
   });
 
   /**
