@@ -373,7 +373,7 @@ decimal points by using a formatting directive. For example:
 | 1   | 2   | 5   | 6   |
 | 3   | 4   | 7   | 8   |
 |     |     |     |     |
-<!-- TBLFM: @>=(@I / @4$3);%.2f -->
+<!-- TBLFM: @>=(@I / @3$4);%.2f -->
 ```
 
 In this example, the formatting directive is the `;%.2f` at the end. Without
