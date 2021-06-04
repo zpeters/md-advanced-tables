@@ -414,6 +414,34 @@ describe('Formulas', () => {
           '| 1   | 2   |     |',
           '| 3   | 4   |     |',
           '| 5   | 6   |     |',
+          '<!-- TBLFM: $3=($2*4.5) -->',
+        ]);
+        textEditor.setCursorPosition(new Point(1, 0));
+        const tableEditor = new TableEditor(textEditor);
+        const err = tableEditor.evaluateFormulas(defaultOptions);
+        const pos = textEditor.getCursorPosition();
+        expect(err).to.be.undefined;
+        expect(pos.row).to.equal(1);
+        expect(pos.column).to.equal(0);
+        expect(textEditor.getSelectionRange()).to.be.undefined;
+        expect(textEditor.getLines()).to.deep.equal([
+          'foo',
+          '| A   | B   | C   |',
+          '| --- | --- | --- |',
+          '| 1   | 2   | 9   |',
+          '| 3   | 4   | 18  |',
+          '| 5   | 6   | 27  |',
+          '<!-- TBLFM: $3=($2*4.5) -->',
+        ]);
+      }
+      {
+        const textEditor = new TextEditor([
+          'foo',
+          '| A   | B   | C   |',
+          '| --- | --- | --- |',
+          '| 1   | 2   |     |',
+          '| 3   | 4   |     |',
+          '| 5   | 6   |     |',
           '<!-- TBLFM: $3=(@0$2/2) -->',
         ]);
         textEditor.setCursorPosition(new Point(1, 0));

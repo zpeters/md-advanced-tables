@@ -32,7 +32,7 @@ tblfm_line   ::= "<!-- TBLFM: " formula_list " -->"
 formula_list ::= formula ( "::" formula_list )?
 formula      ::= destination "=" source display_directive?
 
-source           ::= range | source_reference | single_param_function_call | conditional_function_call | algebraic_operation | real
+source           ::= range | source_reference | single_param_function_call | conditional_function_call | algebraic_operation | float | real
 range            ::= source_reference ".." source_reference
 source_reference ::= absolute_reference | relative_reference
 destination      ::= range | absolute_reference
@@ -50,7 +50,7 @@ single_param_function      ::= "mean" | "sum"
 
 conditional_function_call ::= "if(" predicate "," " "? source "," " "? source ")"
 predicate                 ::= source_without_range conditional_operator source_without_range
-source_without_range      ::= source_reference | single_param_function_call | conditional_function_call | algebraic_operation | real
+source_without_range      ::= source_reference | single_param_function_call | conditional_function_call | algebraic_operation | float | real
 conditional_operator      ::= ">" | "<" | ">=" | "<=" | "==" | "!="
 
 algebraic_operation ::= "(" source " "? algebraic_operator " "? source ")"
@@ -60,6 +60,7 @@ display_directive        ::= ";" display_directive_option
 display_directive_option ::= formatting_directive
 formatting_directive     ::= "%." int "f"
 
+float ::= "-"? int "." int
 real ::= "-"? int
 int  ::= [0-9]+
 `;
@@ -82,7 +83,8 @@ export class Formula {
     this.source = new Source(ast.children[1], table);
   }
 
-  public merge = (table: Table): Result<Table, Error> => this.destination.merge(this.source, table);
+  public merge = (table: Table): Result<Table, Error> =>
+    this.destination.merge(this.source, table);
 }
 
 export class Source {
@@ -107,7 +109,8 @@ export class Source {
   /**
    * getValue returns the evaluated value for this source recursively.
    */
-  public getValue = (table: Table, currentCell: Cell): Result<Value, Error> => this.locationDescriptor.getValue(table, currentCell);
+  public getValue = (table: Table, currentCell: Cell): Result<Value, Error> =>
+    this.locationDescriptor.getValue(table, currentCell);
 }
 
 const newValueProvider = (
@@ -132,6 +135,8 @@ const newValueProvider = (
         return ok(new AlgebraicOperation(ast, table));
       case 'real':
         return ok(new Constant(ast, table));
+      case 'float':
+        return ok(new Constant(ast, table));
       default:
         throw Error('Unrecognized valueProvider type ' + ast.type);
     }
@@ -151,16 +156,14 @@ export const parseAndApply = (
       prev: Result<Formula[], Error>,
       formulaLine: string,
     ): Result<Formula[], Error> =>
-      prev.andThen(
-        (currentFormulas: Formula[]): Result<Formula[], Error> => {
-          const newFormulas = parseFormula(formulaLine, table);
-          if (newFormulas.isErr()) {
-            return newFormulas;
-          }
+      prev.andThen((currentFormulas: Formula[]): Result<Formula[], Error> => {
+        const newFormulas = parseFormula(formulaLine, table);
+        if (newFormulas.isErr()) {
+          return newFormulas;
+        }
 
-          return ok(concat(newFormulas.value, currentFormulas));
-        },
-      ),
+        return ok(concat(newFormulas.value, currentFormulas));
+      }),
     ok([]),
   );
 

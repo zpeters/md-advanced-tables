@@ -8,13 +8,19 @@ export class Constant implements ValueProvider {
   private readonly value: number;
 
   constructor(ast: IToken, table: Table) {
-    const typeErr = checkType(ast, 'real');
+    const typeErr = checkType(ast, 'real', 'float');
     if (typeErr) {
       throw typeErr;
     }
 
     const multiplier = ast.text[0] === '-' ? -1 : 1;
-    this.value = multiplier * parseInt(ast.children[0].text);
+    if (ast.type === 'real') {
+      this.value = multiplier * parseInt(ast.children[0].text);
+    } else {
+      this.value =
+        multiplier *
+        parseFloat(ast.children[0].text + '.' + ast.children[1].text);
+    }
   }
 
   public getValue(table: Table, currentCell: Cell): Result<Value, Error> {
